@@ -1,1 +1,57 @@
-# Empty __init__.py file
+from .entities import (
+    Aula,
+    AulaRestriccion,
+    Curso,
+    DiaSemana,
+    Docente,
+    Facultad,
+    Grupo,
+    GrupoHorario,
+    HorarioBloque,
+    Programa,
+    TipoAula,
+)
+from .exceptions import (
+    AcademicoDomainError,
+    CampoAcademicoInvalidoError,
+    CapacidadAulaInvalidaError,
+    CreditosCursoInvalidosError,
+    HorarioBloqueInvalidoError,
+    NumeroEstudiantesInvalidoError,
+)
+from .interfaces import (
+    IAulaRepository,
+    ICursoRepository,
+    IDocenteRepository,
+    IFacultadRepository,
+    IGrupoRepository,
+    IHorarioBloqueRepository,
+    IProgramaRepository,
+)
+
+__all__ = (
+    "Aula",
+    "AulaRestriccion",
+    "AcademicoDomainError",
+    "CampoAcademicoInvalidoError",
+    "CapacidadAulaInvalidaError",
+    "CreditosCursoInvalidosError",
+    "Curso",
+    "DiaSemana",
+    "Docente",
+    "Facultad",
+    "Grupo",
+    "GrupoHorario",
+    "HorarioBloque",
+    "HorarioBloqueInvalidoError",
+    "IAulaRepository",
+    "ICursoRepository",
+    "IDocenteRepository",
+    "IFacultadRepository",
+    "IGrupoRepository",
+    "IHorarioBloqueRepository",
+    "IProgramaRepository",
+    "NumeroEstudiantesInvalidoError",
+    "Programa",
+    "TipoAula",
+)
