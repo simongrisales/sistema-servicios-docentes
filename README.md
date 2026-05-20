@@ -1,2 +1,615 @@
-# sistema-servicios-docentes
-Sistema de Servicios Docentes es una aplicación web que automatiza asignaciones de aulas mediante validaciones de capacidad y disponibilidad, reduciendo de manera estimada entre un 50% y 60% el tiempo operativo de programación y disminuyendo en más del 80% los conflictos por cruces de espacios. 
+# Sistema de Servicios Docentes — Universidad Católica de Oriente (UCO)
+
+> Aplicación web desarrollada para automatizar y optimizar el proceso de asignación académica de aulas en la Universidad Católica de Oriente (UCO). El sistema permite gestionar de manera eficiente la distribución de espacios académicos mediante validaciones automáticas de disponibilidad, capacidad y conflictos de horario, reduciendo significativamente errores operativos y tiempos de programación.
+>
+> La plataforma está construida bajo una arquitectura distribuida N-Tier y principios de Clean Architecture, utilizando tecnologías modernas como Python, Django, Django REST Framework, PostgreSQL, Valkey, Celery, Docker y Nginx. Además, incorpora monitoreo, procesamiento asíncrono, autenticación JWT, WebSockets y herramientas de observabilidad para garantizar escalabilidad, seguridad y mantenibilidad.
+>
+> El sistema está orientado a mejorar la eficiencia administrativa del área de Servicios Docentes, proporcionando simulaciones de asignación, notificaciones en tiempo real y reglas configurables alineadas con las políticas institucionales de la UCO.
+>
+
+La documentación técnica del proyecto describe:
+
+- **Misión:** Propósito institucional del Sistema de Servicios Docentes, orientado a optimizar y automatizar la asignación académica de aulas en la Universidad Católica de Oriente, reduciendo conflictos operativos, mejorando la eficiencia administrativa y fortaleciendo la gestión de espacios académicos.
+
+- **Especificación de requisitos:** Definición de requerimientos funcionales y no funcionales del sistema, incluyendo reglas de negocio, gestión de usuarios, asignación automática de aulas, simulaciones, validación de conflictos de horario, disponibilidad en tiempo real y criterios de rendimiento, seguridad y mantenibilidad.
+
+- **Drivers arquitectónicos:** Identificación de los elementos que direccionan las decisiones de arquitectura del sistema, incluyendo:
+  - Atributos de calidad con sus respectivas tácticas y estrategias arquitectónicas.
+  - Funcionalidades críticas del proceso de asignación académica.
+  - Restricciones de negocio relacionadas con tiempo, presupuesto, normativas institucionales y adopción tecnológica.
+  - Restricciones técnicas basadas en Clean Architecture, principios SOLID, Docker, CI/CD, monitoreo y servicios stateless.
+
+- **Arquetipo de referencia:** Selección y justificación de las tecnologías, frameworks y plataformas utilizadas en el proyecto, incluyendo Python, Django, Django REST Framework, PostgreSQL, Valkey, Celery, Docker, Nginx, HTMX, Alpine.js, Tailwind CSS, Prometheus y Grafana.
+
+- **Arquitectura de referencia:** Descripción de la arquitectura distribuida N-Tier implementada en el sistema, contemplando separación por capas, modularidad, procesamiento asíncrono, WebSockets, observabilidad, autenticación JWT y despliegue basado en contenedores Docker.
+
+- **Componentes:** Módulos lógicos de Frontend y Backend, sus responsabilidades y relaciones dentro del sistema. El Frontend está construido con Django Templates, HTMX, Alpine.js, Tailwind CSS y daisyUI, mientras que el Backend implementa servicios especializados como asignación académica, gestión de reservas, usuarios, reportes y notificaciones en tiempo real mediante Django REST Framework y Django Channels.
+
+- **Paquetes:** Organización interna siguiendo Clean Architecture, separación por capas (domain, application, infrastructure y presentation), Screaming Architecture y principios SOLID. El sistema estructura sus módulos en aplicaciones independientes como asignación, académico, reservas, usuarios, reportes y notificaciones, favoreciendo mantenibilidad, escalabilidad y desacoplamiento.
+
+- **Despliegue:** Componentes desarrollados y adoptados, junto con su distribución en una infraestructura basada en contenedores Docker. Incluye servicios como Nginx, Django, Daphne, Celery, PostgreSQL, Valkey, Prometheus y Grafana, además de la configuración de redes internas, volúmenes persistentes y monitoreo de la plataforma.
+
+- **Secuencias:** Flujos funcionales típicos entre cliente web, Nginx como API Gateway y proxy inverso, servicios backend en Django, procesamiento asíncrono con Celery, WebSockets con Django Channels, caché distribuido con Valkey y persistencia en PostgreSQL. Se documentan procesos críticos como autenticación JWT, asignación automática de aulas, validación de conflictos y actualización en tiempo real de disponibilidad.
+ 
+---
+
+## Tabla de Contenidos
+
+1. [Descripción del Proyecto](#descripción-del-proyecto)
+2. [Especificación de Requisitos](#especificación-requisitos)
+3. [Drivers Arquitectónicos](#drivers-arquitectónicos)
+   - [Atributos de Calidad](#atributos-de-calidad)
+   - [Funcionalidades Críticas](#funcionalidades-críticas)
+   - [Restricciones de Negocio](#restricciones-de-negocio)
+   - [Restricciones Técnicas](#restricciones-técnicas)
+4. [Arquetipo de Referencia](#arquetipo-de-referencia)
+5. [Arquitectura Referencial](#arquitectura-referencial)
+6. [Modelos de Arquitectura](#modelos-de-arquitectura)
+   - [Modelo de Componentes](#modelo-de-componentes)
+   - [Modelo de Paquetes](#modelo-de-paquetes)
+   - [Modelo de Despliegue](#modelo-de-despliegue)
+   - [Modelo de Secuencia](#modelo-de-secuencia)
+7. [Instalación y Ejecución](#instalación-y-ejecución)
+8. [Roles del Sistema](#roles-del-sistema)
+
+---
+
+## Descripción del Proyecto
+
+Para el Área de Servicios Docentes de la Universidad Católica de Oriente que enfrenta conflictos y retrasos recurrentes en la asignación manual de aulas, lo que genera demoras en la definición y confirmación de espacios al inicio de cada semestre académico y afecta la eficiencia operativa del servicio, **Sistema de Servicios Docentes** es una aplicación web que automatiza esta asignación mediante validaciones de capacidad y disponibilidad.
+
+La plataforma reduce de manera estimada entre un **50% y 60%** el tiempo operativo de programación y disminuye en más del **80%** los conflictos por cruces de espacios, permitiendo optimizar el uso de la infraestructura física, mejorar la eficiencia administrativa y fortalecer la confianza y la imagen institucional del servicio ante la comunidad académica.
+
+A diferencia de soluciones como uPlanner, Scientia, CELCAT, Ad Astra, 25Live, Syllabus Plus, Infosilem, PowerCampus y Banner by Ellucian, este sistema se especializa exclusivamente en la asignación académica de aulas bajo criterios institucionales propios de la UCO, garantizando una solución ágil, contextualizada y alineada con los lineamientos internos de la universidad.
+
+---
+
+## Especificación de Requisitos
+
+### Propósito
+
+Definir y gestionar de manera centralizada los requisitos funcionales, no funcionales y de información del sistema, sirviendo como base para las etapas de análisis, diseño, desarrollo, pruebas e implementación.
+
+### Alcance del Sistema
+
+La plataforma se enfoca exclusivamente en la asignación automática de aulas académicas, permitiendo:
+
+- Gestión de cursos, grupos, docentes, aulas y horarios.
+- Ejecución de asignaciones automáticas de aulas.
+- Validación de capacidad y disponibilidad.
+- Detección de conflictos de horario.
+- Consulta de asignaciones realizadas.
+- Administración de usuarios y roles institucionales.
+
+### Funcionalidades Principales
+
+| ID | Funcionalidad |
+|---|---|
+| RF1 | Autenticación de usuarios |
+| RF2 | Gestión de aulas |
+| RF3 | Gestión de horarios |
+| RF4 | Asignación automática de aulas |
+| RF5 | Validación de conflictos |
+| RF6 | Consulta de asignaciones |
+
+### Requisitos No Funcionales
+
+| ID | Requisito |
+|---|---|
+| RNF1 | Tiempo de respuesta menor a 3 segundos |
+| RNF2 | Seguridad mediante autenticación institucional |
+| RNF3 | Comunicación segura mediante HTTPS |
+| RNF4 | Interfaz intuitiva y consistente |
+| RNF5 | Disponibilidad mínima del 99% |
+| RNF6 | Compatibilidad con navegadores modernos |
+| RNF7 | Código modular y mantenible |
+| RNF8 | Escalabilidad para futuras funcionalidades |
+
+### Requisitos de Información
+
+El sistema administra información relacionada con:
+
+- Aulas y capacidad instalada.
+- Grupos académicos y número de estudiantes.
+- Docentes y cursos asignados.
+- Horarios académicos.
+- Resultados de asignaciones automáticas.
+
+### Requisitos Futuros
+
+- Reservas temporales de aulas.
+- Notificaciones automáticas institucionales.
+- Analítica predictiva para optimización de espacios.
+- Integración con otros sistemas académicos institucionales.
+
+---
+
+## Drivers Arquitectónicos
+
+### Atributos de Calidad
+
+| Atributo | Código Caracteristica | Descripción | Código Escenario de Calidad | Escenario de medición |
+|---|---|---|---|---|
+| Capacidad para ser administrado	| ADM-01 | El sistema debe tener un monitoreo y control constante para poder mantener una observabilidad total del sistema y ayudar a detectar posibles fallas.	| ESC-CAL-ADM-01-E002 | El administrador debe poder identificar errores de asignación mediante logs centralizados en menos de 1 minuto. |
+| Confiabilidad	| CONF-02 |	El sistema debe evitar duplicidad de aulas en un mismo horario.	| ESC-CAL-CONF-02-E002 |	Si dos procesos intentan asignar la misma aula en el mismo horario simultáneamente, el sistema debe rechazar una de las operaciones mediante restricciones de base de datos y mantener consistencia sin corrupción de datos. |
+| Confiabilidad	| CONF-03	| Las asignaciones reflejan datos válidos y actualizados.	| ESC-CAL-CONF-03-E001 |	Cuando un grupo cambia su cantidad de estudiantes antes de la asignación, el sistema debe recalcular automáticamente las opciones de aula válidas sin permitir asignaciones inconsistentes. |
+| Disponibilidad | DISP-04	| El sistema debe tener una alta disponibilidad (Soportar todo el periodo operativo de la universidad)	| ESC-CAL-DISP-04-E003	| El sistema debe estar disponible el 98% del tiempo durante periodos de matrícula y además en tiempos regulres, como la jornada acádemica, teniendo en cuenta, asignación de aulas (Periodos cortos), laboratorios y salas de sistemas. |
+| Disponibilidad | DISP-06 | El sistema ante cualquier falla debe poder realizar una recuperación rápida | ESC-CAL-DISP-06-E001	| Ante una caída del servidor, conexión con base de datos, transferencia o actualización de datos el sistema debe restablecer el servicio en menos de 2 minutos sin pérdida de datos. |
+| Rendimiento	| REND-05	| El sistema debe procesar eficientemente	| ESC-CAL-REND-05-E004	| El sistema debe completar la asignación de 500 grupos en menos de 5 segundos bajo condiciones normales. |
+| Rendimiento	| REND-05	| El sistema debe soportar multiples usuarios	| ESC-CAL-REND-05-E005	| El sistema debe soportar al menos 50 usuarios concurrentes sin degradación significativa en el tiempo de respuesta. |
+| Seguridad	| SEG-01 | El sistema debe tener un control de acceso para poder verificar la identidad de los usuarios mediante credenciales válidas antes de permitir el acceso a las funcionalidades que tiene cada rol en el sistema.	| ESC-CAL-SEG-01-E001	| Si un usuario intenta acceder a funcionalidades fuera de su rol, o intenta acceder con credencial invalidas el sistema debe bloquear la acción y registrar el intento en logs de seguridad. |
+| Usabilidad	| USA-05	| El sistema debe manejar un flujo intuitivo para usuarios administrativos.	| ESC-CAL-USA-05-E001	| Un usuario nuevo debe poder completar el proceso de asignación sin capacitación en menos de 10 minutos utilizando la interfaz. |
+| Usabilidad	| USA-06	| Mensajes que sean comprensibles para el usuario.	| ESC-CAL-USA-06-E001	| Cuando un líder intenta ejecutar la asignación sin datos completos, el sistema debe mostrar mensajes claros indicando exactamente qué información falta. |
+
+---
+
+### Funcionalidades Críticas
+
+| ID | Actor | Funcionalidad | Criticidad |
+|---|---|---|---|
+| FC-01 | Líder DOC | Ejecutar el proceso de asignación automática de aulas basado en disponibilidad y capacidad, con el fin de optimizar la distribución de espacios y reducir conflictos manuales en la programación académica | Alta |
+| FC-02 | Sistema | Validar automáticamente que no existan conflictos de horarios entre asignaciones de aulas para diferentes grupos, con el fin de evitar cruces que afecten la operación académica | Alta |
+| FC-03 | Líder DOC | Ejecutar simulaciones de asignación de aulas sin afectar datos reales, con el fin de evaluar diferentes escenarios antes de realizar la asignación definitiva | Alta |
+| FC-04 | Sistema | Priorizar la asignación de aulas a grupos con mayor número de estudiantes, con el fin de optimizar el uso de la infraestructura institucional disponible | Alta |
+| FC-05 | Sistema | Validar la integridad y consistencia de los datos registrados, como relaciones entre cursos, grupos y horarios, con el fin de evitar errores en la asignación automática | Alta |
+| FC-06 | Sistema | Recalcular automáticamente las asignaciones de aulas cuando se presenten cambios en datos críticos como cantidad de estudiantes o disponibilidad de aulas | Alta |
+| FC-07 | Sistema | Gestionar múltiples solicitudes concurrentes de asignación de aulas sin generar inconsistencias en los datos durante periodos de alta demanda operativa | Alta |
+| FC-08 | Administrador | Definir reglas configurables para el proceso de asignación automática, con el fin de adaptar el sistema a políticas institucionales cambiantes sin modificar el código | Alta |
+| FC-09 | Admisiones | Cargar o actualizar datos de múltiples grupos de manera masiva para optimizar el tiempo operativo y reducir errores manuales | Media |
+| FC-10 | Sistema | Soportar el incremento de datos como número de grupos o aulas sin degradar el rendimiento, garantizando la sostenibilidad del sistema a largo plazo | Media |
+| FC-11 | Sistema | Actualizar la disponibilidad de aulas en tiempo real ante cambios o reservas, con el fin de evitar inconsistencias en la información mostrada | Alta |
+| FC-12 | Sistema | Verificar que todos los grupos tengan aula asignada antes de finalizar el proceso de programación académica, garantizando la cobertura total de la operación | Alta |
+
+---
+
+### Restricciones de Negocio
+
+| Tipo | Descripción |
+|---|---|
+| **Humano** | El equipo académico y administrativo involucrado dispone de tiempo limitado para participar en levantamiento de requerimientos, validaciones funcionales y pruebas del sistema debido a sus responsabilidades operativas institucionales |
+| **Tiempo** | El sistema debe estar disponible antes del inicio del proceso institucional de programación académica del semestre correspondiente para generar valor operativo real |
+| **Legal** | El sistema debe garantizar el cumplimiento de la normativa colombiana relacionada con protección de datos personales (Habeas Data — Ley 1581 de 2012) y políticas institucionales de manejo de información académica |
+| **Presupuesto** | El proyecto debe desarrollarse utilizando únicamente recursos tecnológicos que la universidad pueda adquirir, mantener y escalar sin generar presión financiera. Todos los componentes son 100% open source o gratuitos |
+| **Alcance** | Existe incertidumbre respecto a futuras necesidades funcionales del sistema, como integración con otros sistemas académicos institucionales o ampliación hacia programación completa de horarios |
+| **Humano** | El nivel de adopción tecnológica por parte de algunos usuarios administrativos puede ser bajo, generando resistencia al cambio frente a la automatización del proceso |
+| **Humano** | El conocimiento funcional del proceso de asignación se encuentra concentrado en pocas personas dentro del área de servicios docentes |
+| **Presupuesto** | El sistema debe minimizar costos futuros de mantenimiento y soporte técnico para garantizar sostenibilidad institucional |
+| **Legal** | El sistema debe respetar normativas institucionales internas sobre uso de infraestructura física académica |
+| **Performance** | El sistema debe completar la asignación de 500 grupos en menos de 5 segundos y soportar al menos 50 usuarios concurrentes sin degradación significativa |
+| **Disponibilidad** | Disponibilidad del 98% durante periodos de matrícula. RTO/RPO: restablecimiento del servicio en menos de 2 minutos sin pérdida de datos |
+
+---
+
+### Restricciones Técnicas
+
+| Categoría | Restricción |
+|---|---|
+| **Prácticas de diseño** | El diseño y desarrollo debe seguir principios SOLID para garantizar modularidad y mantenibilidad |
+| **Prácticas de diseño** | El sistema debe propender por una arquitectura modular basada en separación de responsabilidades entre capas: dominio, aplicación, infraestructura y presentación (Clean Architecture) |
+| **Prácticas de diseño** | El sistema debe diseñarse considerando principios de aplicaciones reactivas: resiliencia, capacidad de respuesta y elasticidad |
+| **Marco metodológico** | El desarrollo debe realizarse utilizando un framework iterativo para organizar entregas y validaciones continuas con backlog priorizado por valor operativo y riesgo técnico |
+| **DevOps** | El sistema debe implementar integración continua para validar automáticamente compilación, pruebas y calidad del código en cada push |
+| **DevOps** | El despliegue debe realizarse mediante contenedores Docker para garantizar portabilidad entre entornos |
+| **DevOps** | El sistema debe implementar monitoreo técnico de disponibilidad, errores y rendimiento |
+| **Clean Code** | El código fuente debe seguir principios de Clean Code evitando code smells y promoviendo legibilidad con convenciones de nombres descriptivas |
+| **Pruebas** | El sistema debe mantener cobertura de pruebas unitarias sobre componentes críticos del proceso de asignación |
+| **Patrones** | El sistema debe utilizar el patrón Repository para abstraer el acceso a datos |
+| **Patrones** | El proceso de asignación debe implementarse con el patrón Strategy para soportar múltiples algoritmos intercambiables |
+| **Patrones** | El sistema debe aplicar el patrón Factory para la creación controlada de entidades complejas |
+| **Versionamiento** | Control de versiones estructurado mediante ramas: `feature/*` → `develop` → `main` |
+| **Stateless** | Todos los servicios backend deben ser stateless para facilitar escalabilidad horizontal |
+
+---
+
+## Arquetipo de Referencia
+
+### Componentes de Desarrollo Propio
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación | Motivación |
+|---|---|---|---|---|---|---|
+| Servicios Backend | Equipo de desarrollo — UCO | Sistema Servicios Docentes — Backend | 0.1 | Propietario | Se desarrolla para implementar la lógica de negocio específica del sistema: asignación automática de aulas, validación de conflictos de horario, gestión de reservas, reglas académicas configurables y generación de reportes. No existe solución genérica que cubra las políticas institucionales propias de la UCO. | Automatizar el proceso de asignación y gestión de aulas académicas, reducir errores manuales en la programación semestral y mejorar la eficiencia operativa del área de servicios docentes. |
+| Cliente (Frontend Web) | Equipo de desarrollo — UCO | Sistema Servicios Docentes — Frontend | 0.1 | Propietario | Se construye una interfaz web adaptada a los roles del sistema (facultad, admisiones, coordinador de servicios docentes), garantizando usabilidad acorde al proceso académico institucional y flujos de trabajo específicos que no pueden cubrirse con paneles administrativos genéricos. | Facilitar la interacción de los actores institucionales con el sistema, permitir la visualización en tiempo real de disponibilidad de aulas y brindar una experiencia de usuario coherente con los procesos académicos de la UCO. |
+
+### Plataforma de Desarrollo
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| Lenguaje de programación | Python Software Foundation | Python | 3.13 | Open Source (PSF) | Versión estable más reciente con soporte activo. Compatible con Django 5.2 LTS. Mejoras de rendimiento en CPython y soporte nativo para typing avanzado. |
+| Framework backend | Django Software Foundation | Django | 5.2 LTS | Open Source (BSD) | Versión LTS con soporte hasta 2028. Incluye ORM, autenticación, migraciones y seguridad integrada. Primera versión que requiere PostgreSQL 14+ y soporta claves primarias compuestas. |
+| APIs REST | Comunidad DRF | Django REST Framework | 3.15 | Open Source (BSD) | Estándar de facto para APIs en Django. Provee serializers, ViewSets, autenticación por token y browsable API para pruebas. |
+| Servidor WSGI | Benoit Chesneau | Gunicorn | 23 | Open Source (MIT) | Servidor WSGI de producción. Reemplaza el servidor de desarrollo de Django. Diseñado para correr detrás de Nginx como proxy inverso. |
+| Variables de entorno | Comunidad | django-environ | 0.11 | Open Source (MIT) | Gestiona configuración sensible mediante archivos .env. Cumple función de Key Vault simplificado para entornos de desarrollo. |
+| Gestor de dependencias | PyPA | pip + requirements.txt | 24 | Open Source (MIT) | Gestor nativo de Python. Gestiona dependencias de forma reproducible separando entornos de desarrollo y producción. |
+| Documentación de APIs | OpenAPI Initiative | drf-spectacular | 0.27 | Open Source (BSD) | Genera documentación OpenAPI 3.x automáticamente desde el código DRF. Provee Swagger UI y ReDoc integradas. |
+
+### Frontend
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| Motor de plantillas | Django Software Foundation | Django Templates | 5.2 | Open Source (BSD) | Motor nativo de Django que genera HTML en el servidor. Permite layouts base, fragmentos parciales y renderizado de contexto. |
+| Interactividad servidor | Big Sky Software | HTMX | 2.x | Open Source (BSD 2-Clause) | Permite peticiones HTTP desde atributos HTML sin JavaScript. 14KB sin build step. Reemplaza fetch/AJAX manual. |
+| Reactividad cliente | Caleb Porzio / Comunidad | Alpine.js | 3.14 | Open Source (MIT) | Reactividad declarativa al HTML mediante atributos x-data, x-show, x-on sin virtual DOM. 15KB de peso. |
+| Framework CSS | Tailwind Labs | Tailwind CSS | 4.x | Open Source (MIT) | Framework de clases utilitarias. La versión 4 integra su propio motor de build sin dependencia de PostCSS. |
+| Integración Django-Tailwind | Tim Kamanin | django-tailwind | 3.x | Open Source (MIT) | Integra Tailwind CSS en el flujo Django mediante comandos manage.py, regenerando el CSS automáticamente. |
+| Componentes UI | Pouya Saadeghi | daisyUI | 5.x | Open Source (MIT) | Componentes semánticos sobre Tailwind CSS: tablas, modales, badges, formularios y navbars listos para usar. |
+| Iconografía | Tailwind Labs | Heroicons | 2.x | Open Source (MIT) | Iconos SVG para integrarse con clases de Tailwind. Se insertan inline en los templates sin peticiones HTTP adicionales. |
+
+### Infraestructura y Red
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| DNS / CDN / WAF / API Gateway / Load Balancer | F5 / NGINX Inc. | Nginx | 1.27 | Open Source (BSD) | Centraliza en un componente: proxy inverso, balanceador de carga, terminador SSL/TLS, servidor de estáticos y filtrado de tráfico por IP. |
+| Archivos estáticos | Dave Evans | WhiteNoise | 6 | Open Source (MIT) | Sirve archivos estáticos desde Django con cabeceras de caché HTTP y compresión gzip. Complementa a Nginx en desarrollo. |
+
+### Seguridad e Identidad
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| IDP/IDM — Autenticación JWT | Jazzband | djangorestframework-simplejwt | 5.4 | Open Source (MIT) | Autenticación stateless mediante JWT (RFC 7519) con access token, refresh token y blacklist de tokens revocados. |
+| IDP/IDM — Control de acceso | Django Software Foundation | Django Auth + Permissions | 5.2 | Open Source (BSD) | Sistema nativo de Django para RBAC sin librerías adicionales. Integrado con simplejwt para verificación de permisos por endpoint. |
+| Rate Limiter | Brendan Sterne | django-ratelimit | 4 | Open Source (Apache 2.0) | Limitación de tasa por IP, usuario o clave personalizada sobre vistas DRF, complementando el rate limiting de Nginx. |
+| Captcha | Prairie Coders | django-recaptcha | 4.x | Open Source (BSD) | Validación reCAPTCHA v3 en formulario de login y acciones críticas como ejecución de asignación masiva. |
+| Sanitización HTML | Mozilla / Comunidad | bleach | 6.x | Open Source (Apache 2.0) | Sanitiza entradas HTML del usuario previniendo ataques XSS en campos de texto del sistema. |
+| Key Vault (desarrollo) | Comunidad | django-environ | 0.11 | Open Source (MIT) | Gestión de secretos mediante .env. Evita credenciales embebidas en código fuente. |
+| Key Vault (producción) | HashiCorp | HashiCorp Vault | 1.18 | Open Source (BSL 1.1) | Almacén centralizado de secretos y certificados para entornos de producción. Community Edition gratuita. |
+
+### Procesamiento Asíncrono y Tiempo Real
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| Colas de Mensajes (Broker) | Linux Foundation / Valkey Community | Valkey | 8 | Open Source (BSD 3-Clause) | Fork 100% open source de Redis bajo la Linux Foundation. Wire-protocol compatible. Actúa como broker Celery, channel layer Django Channels y caché distribuido. |
+| Workers | Celery Project | Celery | 5.6 | Open Source (BSD) | Framework de tareas asíncronas para Python. Ejecuta asignación masiva, generación de reportes y recálculo automático en segundo plano. |
+| WebSocket | Comunidad Django | Django Channels | 4.1 | Open Source (BSD) | Extiende Django para WebSockets. Valkey actúa como channel layer para sincronización entre instancias. |
+| Servidor ASGI | Django / Comunidad | Daphne | 4 | Open Source (BSD) | Servidor ASGI oficial de Django Channels para gestionar conexiones HTTP y WebSocket en el mismo proceso. |
+| Notificaciones | Łukasz Balcerzak / Comunidad | django-notifications-hq | 1.8 | Open Source (MIT) | Notificaciones in-app siguiendo el estándar Activity Streams. Se combina con Django Channels para entrega en tiempo real. |
+
+### Datos
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| Base de Datos SQL | PostgreSQL Global Development Group | PostgreSQL | 17 | Open Source (PostgreSQL) | Versión estable con soporte hasta 2029. Soporta transacciones ACID, integridad referencial, JSONB nativo y mejoras de rendimiento en consultas complejas. |
+| Caché Distribuido | Linux Foundation / Valkey Community | Valkey + django-redis | 8 / 5.4 | Open Source (BSD) | Valkey como backend de caché en memoria. django-redis provee integración transparente con el sistema de caché de Django. |
+
+### Observabilidad
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| Monitoreo — Recolección | Cloud Native Computing Foundation | Prometheus | 3 | Open Source (Apache 2.0) | Sistema de monitoreo de series de tiempo estándar de la industria. Se integra con Django mediante django-prometheus. |
+| Monitoreo — Visualización | Grafana Labs | Grafana | 12 | Open Source (AGPL 3.0) | Dashboard de visualización que consume métricas de Prometheus. Community Edition completamente gratuita. |
+| Exportador Django | Comunidad | django-prometheus | 0.3 | Open Source (Apache 2.0) | Middleware que expone métricas de Django en formato Prometheus sin modificar el código de negocio. |
+| Logs | Python Software Foundation | Python logging + Django logging | Stdlib | Open Source (PSF) | Sistema de logging nativo configurado mediante el diccionario LOGGING de Django. Logs estructurados con niveles y rotación. |
+
+### Internacionalización
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| I18N | Django Software Foundation | Django i18n | 5.2 (nativo) | Open Source (BSD) | Soporte nativo de internacionalización. Idioma base español colombiano (es-co) con soporte preparado para inglés. |
+
+### DevOps y Calidad
+
+| Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación |
+|---|---|---|---|---|---|
+| Contenedores | Docker Inc. | Docker + Docker Compose | 27 / 2 | Open Source (Apache 2.0) | Empaquetado y despliegue reproducible. Docker Compose define el stack completo en un único archivo. |
+| IDE | Microsoft | Visual Studio Code | 1.9x | Freeware | Entorno ligero con extensiones para Python, Django, Docker y Git integradas. |
+| Control de versiones | Linus Torvalds / Comunidad | Git | 2.47 | Open Source (LGPL 2.1) | Control de versiones distribuido. Ramas: feature/* → develop → main. |
+| Repositorio | Microsoft | GitHub | — | Freemium | Alojamiento de repositorios con plan gratuito. Soporta GitHub Actions para CI/CD. |
+| CI/CD | GitHub | GitHub Actions | — | Gratuito | Ejecuta pruebas, linting y construcción de imagen Docker automáticamente en cada push. |
+| Análisis estático | SonarSource | SonarQube Community | 25 | Open Source (LGPL) | Detecta code smells, bugs y vulnerabilidades de seguridad en el código Python. |
+| Seguridad OWASP | OWASP Foundation | OWASP ZAP | 2.15.x | Open Source (Apache 2.0) | Escanea la aplicación buscando vulnerabilidades de seguridad (XSS, SQL injection, etc.). |
+| Framework de pruebas | Python Software Foundation | pytest + pytest-django | 8 / 4 | Open Source (MIT/BSD) | Framework de pruebas estándar. pytest-django provee fixtures para base de datos de tests. |
+| Cobertura de pruebas | Ned Batchelder | coverage.py | 7 | Open Source (Apache 2.0) | Mide cobertura de pruebas generando reportes por módulo. Integrado con pytest mediante pytest-cov. |
+| Linting y formato | Astral / PyCQA | Ruff + Black | 0.9 / 25 | Open Source (MIT) | Ruff reemplaza Flake8 en velocidad. Black formatea automáticamente según PEP 8. |
+
+---
+
+## Arquitectura Referencial
+
+### Estilo Arquitectónico
+
+El sistema implementa una **arquitectura distribuida N-Tier** con las siguientes características:
+
+- **Enfoque stateless** en todos los servicios backend, permitiendo escalabilidad horizontal
+- **Modelo C4 Nivel 1-2** (contexto y contenedores)
+- **Clean Architecture** con separación de capas: dominio, aplicación, infraestructura y presentación
+- **Principios SOLID** aplicados en todo el código
+- **Patrones de diseño**: Repository, Strategy y Factory
+
+### Descripción de Capas
+
+| Capa | Responsabilidad | Tecnologías |
+|---|---|---|
+| **Edge / Entrada** | Filtrado de tráfico, rate limiting, terminación SSL, distribución de contenido | Nginx 1.27 |
+| **Frontend** | Interfaz de usuario, renderizado HTML server-side, interacciones dinámicas | Django Templates, HTMX, Alpine.js, Tailwind, daisyUI |
+| **Seguridad** | Autenticación JWT, control de acceso por roles, captcha, sanitización | simplejwt, Django Auth, django-recaptcha, bleach |
+| **Backend** | Lógica de negocio, casos de uso, APIs REST | Django 5.2, DRF 3.15, Gunicorn, Daphne |
+| **Datos** | Persistencia relacional, caché distribuido, balanceo de carga | PostgreSQL 17, Valkey 8, django-redis |
+| **Procesamiento** | Tareas asíncronas, WebSockets, notificaciones en tiempo real | Celery 5.6, Django Channels 4.1, django-notifications-hq |
+| **Observabilidad** | Métricas, dashboards, logs centralizados | Prometheus 3, Grafana 12, Python logging |
+
+---
+
+## Modelos de Arquitectura
+
+### Modelo de Componentes
+
+Describe los componentes del sistema y sus interfaces de comunicación.
+
+
+
+**Interfaces de comunicación:**
+
+| Componente origen | Componente destino | Protocolo | Descripción |
+|---|---|---|---|
+| Cliente | Nginx | HTTPS | Tráfico web cifrado |
+| Nginx | Gunicorn | HTTP | Proxy inverso para peticiones REST |
+| Nginx | Daphne | WSS | Proxy WebSocket para tiempo real |
+| Backend | PostgreSQL | TCP/IP | Consultas ORM via psycopg3 |
+| Backend | Valkey | TCP/IP | Caché de consultas frecuentes |
+| Celery | Valkey | AMQP | Cola de tareas asíncronas |
+| Django Channels | Valkey | TCP/IP | Channel layer WebSocket |
+| django-prometheus | Prometheus | HTTP | Scrape de métricas /metrics |
+
+---
+
+### Modelo de Paquetes
+
+Estructura interna de paquetes siguiendo Clean Architecture.
+
+```
+sistema-servicios-docentes/
+│
+├── backend/
+│   ├── core/                          # Paquete de infraestructura común
+│   │   ├── repositories.py            # BaseRepository (ABC)
+│   │   ├── services.py                # BaseService (ABC)
+│   │   ├── exceptions.py              # Excepciones base del sistema
+│   │   └── dtos.py                    # DTOs base reutilizables
+│   │
+│   ├── config/                        # Paquete de configuración
+│   │   ├── settings/
+│   │   │   ├── base.py               # Configuración común
+│   │   │   ├── dev.py                # Entorno desarrollo
+│   │   │   └── prod.py               # Entorno producción
+│   │   ├── urls.py                    # Enrutamiento raíz
+│   │   ├── asgi.py                    # Punto entrada ASGI
+│   │   └── wsgi.py                    # Punto entrada WSGI
+│   │
+│   └── apps/
+│       ├── asignacion/                # Paquete núcleo del sistema
+│       │   ├── domain/               # Capa dominio — Python puro
+│       │   │   ├── entities.py       # Asignacion, ReglaAsignacion
+│       │   │   ├── interfaces.py     # IAsignacionRepository, IStrategy
+│       │   │   └── exceptions.py     # AsignacionConflictoError
+│       │   ├── application/          # Capa aplicación — casos de uso
+│       │   │   ├── dtos.py           # AsignacionInputDTO, OutputDTO
+│       │   │   └── use_cases.py      # EjecutarAsignacion, Simular
+│       │   ├── infrastructure/       # Capa infraestructura — Django
+│       │   │   ├── models.py         # Modelos ORM
+│       │   │   ├── repositories.py   # Implementación concreta
+│       │   │   ├── strategies.py     # Estrategias de asignación
+│       │   │   └── tasks.py          # Tareas Celery
+│       │   ├── presentation/         # Capa presentación — vistas
+│       │   │   ├── serializers.py
+│       │   │   ├── views.py
+│       │   │   ├── urls.py
+│       │   │   └── templates/
+│       │   └── tests/
+│       │       ├── test_domain.py    # Tests sin Django
+│       │       ├── test_use_cases.py
+│       │       └── test_views.py
+│       │
+│       ├── academico/                 # Paquete entidades académicas
+│       │   ├── domain/               # Aula, Grupo, Docente, Curso
+│       │   ├── application/          # CrearGrupo, CargaMasiva
+│       │   ├── infrastructure/       # Modelos + Repositorios
+│       │   ├── presentation/         # Vistas + Templates
+│       │   └── tests/
+│       │
+│       ├── reservas/                  # Paquete reservas temporales
+│       │   ├── domain/               # Reserva, EstadoReserva
+│       │   ├── application/          # CrearReserva, Cancelar
+│       │   ├── infrastructure/       # Modelos + Tareas expiración
+│       │   ├── presentation/
+│       │   └── tests/
+│       │
+│       ├── usuarios/                  # Paquete actores y roles
+│       │   ├── domain/               # Usuario, Rol, Permiso
+│       │   ├── application/          # Autenticar, AsignarRol
+│       │   ├── infrastructure/
+│       │   ├── presentation/         # login.html, perfil.html
+│       │   └── tests/
+│       │
+│       ├── reportes/                  # Paquete generación reportes
+│       │   ├── domain/
+│       │   ├── application/          # GenerarReporteOcupacion
+│       │   ├── infrastructure/       # Tareas Celery asíncronas
+│       │   ├── presentation/
+│       │   └── tests/
+│       │
+│       └── notificaciones/            # Paquete WebSocket + alertas
+│           ├── domain/
+│           ├── application/          # EnviarNotificacion
+│           ├── infrastructure/       # consumers.py (Channels)
+│           ├── presentation/         # campana.html (HTMX partial)
+│           └── tests/
+│
+├── frontend/                          # Paquete assets y templates globales
+│   ├── templates/
+│   │   ├── base.html                 # Layout principal
+│   │   ├── partials/                 # navbar, sidebar, toast
+│   │   └── pages/                    # dashboard, 403, 404, 500
+│   └── static/
+│       ├── css/tailwind.css
+│       ├── js/                       # htmx, alpine, ws-notifications
+│       └── icons/                    # Heroicons SVG
+│
+└── nginx/
+    └── nginx.conf                     # Proxy inverso + WAF + SSL
+
+Regla de dependencias entre capas:
+domain       ◄── no depende de nada externo
+application  ◄── depende solo de domain
+infrastructure ◄── depende de domain + application + Django
+presentation ◄── depende solo de application
+```
+
+---
+
+### Modelo de Despliegue
+
+Describe la distribución física de los componentes en contenedores Docker.
+
+
+
+**Nodos del despliegue:**
+
+| Contenedor | Imagen base | Puerto interno | Rol |
+|---|---|---|---|
+| `nginx` | nginx:1.27-alpine | 80, 443 | Proxy inverso, WAF, SSL |
+| `django` | python:3.13-slim | 8000 | Aplicación HTTP (Gunicorn) |
+| `daphne` | python:3.13-slim | 8001 | WebSocket ASGI (Daphne) |
+| `celery` | python:3.13-slim | — | Worker tareas asíncronas |
+| `postgres` | postgres:17-alpine | 5432 | Base de datos relacional |
+| `valkey` | valkey/valkey:8-alpine | 6379 | Caché + Broker + Channels |
+| `prometheus` | prom/prometheus:v3 | 9090 | Recolección de métricas |
+| `grafana` | grafana/grafana:12 | 3000 | Visualización de métricas |
+
+---
+
+### Modelo de Secuencia
+
+
+
+---
+
+## Instalación y Ejecución
+
+### Prerrequisitos
+
+Instalar en el siguiente orden:
+
+```bash
+# 1. Visual Studio Code
+# Descargar desde: code.visualstudio.com
+
+# 2. Docker Desktop
+# Descargar desde: docker.com/products/docker-desktop
+
+# 3. Git
+# Descargar desde: git-scm.com
+
+# Verificar instalaciones
+node --version    # v20+
+docker --version  # 27+
+git --version     # 2.47+
+```
+
+### Levantar el proyecto
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/simongrisales/sistema-servicios-docentes
+cd sistema-servicios-docentes
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con los valores reales
+
+# Desarrollo (con hot-reload)
+docker compose -f docker-compose.dev.yml up
+
+# Producción
+docker compose up -d
+
+# Aplicar migraciones (primera vez)
+docker compose exec django python manage.py migrate
+
+# Crear superusuario
+docker compose exec django python manage.py createsuperuser
+```
+
+### URLs del sistema
+
+| Servicio | URL | Descripción |
+|---|---|---|
+| Aplicación | http://localhost | Sistema principal |
+| API REST | http://localhost/api/ | Endpoints REST |
+| Swagger UI | http://localhost/api/schema/swagger-ui/ | Documentación APIs |
+| ReDoc | http://localhost/api/schema/redoc/ | Documentación alternativa |
+| Grafana | http://localhost:3000 | Dashboard de métricas |
+| Prometheus | http://localhost:9090 | Métricas raw |
+
+### Ejecutar pruebas
+
+```bash
+# Todos los tests
+docker compose exec django pytest backend/
+
+# App específica (crítica)
+docker compose exec django pytest backend/apps/asignacion/
+
+# Con reporte de cobertura
+docker compose exec django pytest --cov=backend/ --cov-report=html
+
+# Linting y formato
+docker compose exec django ruff check backend/
+docker compose exec django black --check backend/
+```
+
+---
+
+## Roles del Sistema
+
+| Rol | Permisos |
+|---|---|
+| **Administrador** | Gestión de usuarios, reglas configurables, logs centralizados, catálogo de parámetros |
+| **LíderSD** | Ejecutar asignación automática, simulaciones, supervisión del proceso, validación de datos, registrar y modificar asignaciones semestrales |
+| **AuxiliarSD** | Registrar y modificar asignaciones de tiempo parcial |
+| **Facultad / Admisiones** | Ingresar datos académicos: materia, grupo, profesor, horario y cantidad de estudiantes |
+
+---
+
+## Estrategia de Ramificación Git
+
+```
+main          ← código estable — releases de producción
+  └── develop ← integración continua de features
+        ├── feature/app-academico
+        ├── feature/app-asignacion
+        ├── feature/app-reservas
+        └── feature/app-notificaciones
+```
+
+---
+
+## Línea Base del Sistema
+
+| # | Requisito | Tecnología |
+|---|---|---|
+| 1 | Baúl de secretos | django-environ + HashiCorp Vault | 
+| 2 | CI/CD | GitHub Actions | 
+| 3 | Análisis estático | SonarQube Community | 
+| 4 | Identity Provider | simplejwt + Django Auth | 
+| 5 | API Gateway | Nginx | 
+| 6 | WAF | Nginx | 
+| 7 | Monitoreo e instrumentación | Prometheus + Grafana | 
+| 8 | Notification Gateway | django-notifications-hq | 
+| 9 | Catálogo de mensajes | Valkey + Celery | 
+| 10 | Catálogo de parámetros | Modelo CatalogoParametro (JSONB) | 
+| 11 | Catálogo de notificaciones | django-notifications-hq | 
+| 12 | Principios de diseño | SOLID | 
+| 13 | Clean Code | Ruff + Black | 
+| 14 | Clean Architecture | Capas: domain/application/infrastructure/presentation | 
+| 15 | APIs REST | Django REST Framework | 
+| 16 | Swagger / OpenAPI | drf-spectacular | 
+| 17 | HTTPS | Nginx SSL | 
+| 18 | Aseguramiento APIs | simplejwt + Django permissions | 
+| 19 | Captcha | django-recaptcha 4.x | 
+| 20 | I18N | Django i18n nativo (es-co) | 
+| 21 | Git + ramificación | GitHub + feature/develop/main | 
+| 22 | OWASP ZAP + Sanitizer | OWASP ZAP 2.15 + bleach 6.x | 
+| 23 | Caché distribuida | Valkey + django-redis |
+
+---
+
+*Sistema de Servicios Docentes — Universidad Católica de Oriente (UCO) — v0.1*
