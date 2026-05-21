@@ -1,5 +1,14 @@
 # Sistema de Servicios Docentes — Universidad Católica de Oriente (UCO)
 
+## Desarrolladores
+
+- Simón Alejandro Grisales Bedoya  
+- Emmanuel Arcila Pérez    
+
+Universidad Católica de Oriente — Ingeniería de Software II
+
+---
+
 > Aplicación web desarrollada para automatizar y optimizar el proceso de asignación académica de aulas en la Universidad Católica de Oriente (UCO). El sistema permite gestionar de manera eficiente la distribución de espacios académicos mediante validaciones automáticas de disponibilidad, capacidad y conflictos de horario, reduciendo significativamente errores operativos y tiempos de programación.
 >
 > La plataforma está construida bajo una arquitectura distribuida N-Tier y principios de Clean Architecture, utilizando tecnologías modernas como Python, Django, Django REST Framework, PostgreSQL, Valkey, Celery, Docker y Nginx. Además, incorpora monitoreo, procesamiento asíncrono, autenticación JWT, WebSockets y herramientas de observabilidad para garantizar escalabilidad, seguridad y mantenibilidad.
@@ -7,7 +16,11 @@
 > El sistema está orientado a mejorar la eficiencia administrativa del área de Servicios Docentes, proporcionando simulaciones de asignación, notificaciones en tiempo real y reglas configurables alineadas con las políticas institucionales de la UCO.
 >
 
-![Universidad-Cátolica-de-Oriente](universidad-catolica-de-oriente.png)
+---
+
+![Universidad-Cátolica-de-Oriente](logo-uco.png)
+
+---
 
 La documentación técnica del proyecto describe:
 
@@ -39,6 +52,12 @@ La documentación técnica del proyecto describe:
 
 1. [Descripción del Proyecto](#descripción-del-proyecto)
 2. [Especificación de Requisitos](#especificación-requisitos)
+   - [Propósito](#propósito)
+   - [Alcance del Sistema](#alcance-sistema)
+   - [Funcionalidades Principales](#funcionalidades-principales)
+   - [Requisitos No Funcionales](#requisitos-no-funcionales)
+   - [Requisitos de Información](#requisitos-información)
+   - [Requisitos Futuros](#requisitos-futuros)
 3. [Drivers Arquitectónicos](#drivers-arquitectónicos)
    - [Atributos de Calidad](#atributos-de-calidad)
    - [Funcionalidades Críticas](#funcionalidades-críticas)
@@ -48,11 +67,25 @@ La documentación técnica del proyecto describe:
 5. [Arquitectura Referencial](#arquitectura-referencial)
 6. [Modelos de Arquitectura](#modelos-de-arquitectura)
    - [Modelo de Componentes](#modelo-de-componentes)
+     - [Propósito](#propósito)
+     - [Propósito](#propósito)
    - [Modelo de Paquetes](#modelo-de-paquetes)
+     - [Propósito](#propósito)
+     - [Propósito](#propósito)
    - [Modelo de Despliegue](#modelo-de-despliegue)
+     - [Propósito](#propósito)
+     - [Propósito](#propósito)
    - [Modelo de Secuencia](#modelo-de-secuencia)
+     -[Propósito](#propósito)
+     -[Propósito](#propósito)
 7. [Instalación y Ejecución](#instalación-y-ejecución)
+   -[Prerrequisitos](#prerrequisitos)
+   -[Levantar el proyecto](#levantar-proyecto)
+   -[URLs del sistema](#urls-sistema)
+   -[Ejecutar pruebas](#ejecutar-pruebas)
 8. [Roles del Sistema](#roles-del-sistema)
+9. [Estrategia de Ramificación Git](#estrategia-ramificación-git)
+10. [Línea Base del Sistema](#linea-base-sistema)
 
 ---
 
@@ -203,6 +236,42 @@ El sistema administra información relacionada con:
 
 ## Arquetipo de Referencia
 
+| Componente | Descripción | Justificación | Tipo Adquisición |
+|---|---|---|---|
+| Cliente (Frontend Web) | Vínculo | La separación entre la capa de presentación y la lógica de negocio es un principio fundamental de la arquitectura N-Tier. Mantener el cliente como una capa independiente favorece la modificabilidad, ya que cambios en la interfaz no afectan los servicios subyacentes. Al ser stateless, el cliente no almacena estado de sesión de forma permanente, lo que simplifica la escalabilidad horizontal del backend y mejora la disponibilidad general del sistema.<br><br>1. Driver 1: Usabilidad<br>2. Driver 2: Disponibilidad<br>3. Driver 3: Accesibilidad<br>4. Driver 4: Capacidad para ser mantenido | Desarrollo propio |
+| Web Application Firewall (WAF) | Vínculo | La seguridad es un driver arquitectónico transversal en sistemas que gestionan información académica sensible. El WAF actúa como primera línea de defensa a nivel de capa de aplicación, bloqueando solicitudes maliciosas antes de que alcancen la lógica del sistema. Su presencia reduce la superficie de ataque e implementa principios de defensa en profundidad, especialmente relevante en sistemas institucionales que procesan datos de docentes, estudiantes y espacios físicos sujetos a regulaciones de protección de datos.<br><br>1. Driver 1: Seguridad<br>2. Driver 2: Disponibilidad<br>3. Driver 3: Reglas de Negocio (Normatividad)<br>4. Driver 4: Confiabilidad<br>5. Driver 5: Funcionalidad Crítica: Validación de integridad y consistencia de datos<br>6. Driver 6: Restricción de Negocio: Legal - Habeas Data | Adoptado |
+| Domain Name System (DNS) | Vínculo | El DNS es un componente infraestructural crítico para la disponibilidad y el rendimiento. Permite implementar estrategias de balanceo de carga a nivel de red y facilita la conmutación por error (failover) en escenarios de alta disponibilidad. Adicionalmente, soporta mecanismos de caché a nivel de resolución, reduciendo la latencia percibida por el usuario final. En arquitecturas distribuidas es un requisito de infraestructura no aplicativo.<br><br>1. Driver 1: Disponibilidad<br>2. Driver 2: Rendimiento<br>3. Driver 3: Capacidad para ser desplegado | Adoptado |
+| Content Delivery Network (CDN) | Vínculo | La inclusión de una red de distribución de contenido responde directamente al driver de rendimiento y experiencia de usuario. Al distribuir el contenido estático en nodos de borde, se reduce la latencia de red y se descarga al backend de solicitudes innecesarias. Esto impacta positivamente en la escalabilidad, ya que el servidor de origen puede destinar recursos exclusivamente al procesamiento de lógica de negocio. También mejora la disponibilidad al proveer redundancia geográfica para activos estáticos.<br><br>1. Driver 1: Rendimiento<br>2. Driver 2: Escalabilidad<br>3. Driver 3: Disponibilidad | Adoptado |
+| API Gateway | Vínculo | El API Gateway responde a drivers de seguridad, mantenibilidad y escalabilidad. Al centralizar el punto de entrada, se evita la exposición directa de los microservicios a la red exterior, reduciendo la superficie de ataque. Permite implementar políticas uniformes de autenticación y monitoreo sin duplicar lógica en cada servicio. En arquitecturas de microservicios es fundamental para gestionar la complejidad del enrutamiento y garantizar una interfaz coherente para el consumidor, reduciendo el acoplamiento entre cliente y servicios internos.<br><br>1. Driver 1: Seguridad<br>2. Driver 2: Capacidad para ser mantenido<br>3. Driver 3: Escalabilidad<br>4. Driver 4: Rendimiento<br>5. Driver 5: Capacidad para ser desplegado<br>6. Driver 6: Funcionalidad Crítica: Concurrencia sin inconsistencias | Adoptado |
+| Rate Limiter | Vínculo | Rate Limiter es un driver de disponibilidad y seguridad esencial en sistemas con múltiples actores concurrentes. Sin este mecanismo, un cliente con comportamiento anómalo, ya sea malicioso o por error de programación, podría saturar los recursos del sistema y degradar la experiencia de todos los usuarios. Al aplicarlo en la capa de entrada, se protege toda la cadena de procesamiento, optimizando el uso de recursos computacionales bajo condiciones de carga elevada o ataques coordinados de baja intensidad.<br><br>1. Driver 1: Disponibilidad<br>2. Driver 2: Seguridad<br>3. Driver 3: Rendimiento<br>4. Driver 4: Funcionalidad Crítica: Concurrencia sin inconsistencias | Adoptado |
+| IDP/IDM | Vínculo IDP / IDM | La identidad y el control de acceso son pilares de la seguridad en cualquier sistema de información institucional. Centralizar estas responsabilidades en un componente especializado elimina la necesidad de implementar lógica de seguridad dispersa en cada microservicio, reduciendo duplicación y riesgos. Permite implementar políticas de acceso basadas en roles de forma consistente, garantizando que cada actor acceda únicamente a las funcionalidades correspondientes a su perfil institucional. Es un driver de seguridad y mantenibilidad no negociable.<br><br>1. Driver 1: Seguridad<br>2. Driver 2: Confiabilidad<br>3. Driver 3: Usabilidad<br>4. Driver 4: Capacidad para ser mantenido<br>5. Driver 5: Restricción de Negocio: Legal - Habeas Data | Adoptado |
+| Key Vault | Vínculo | La gestión segura de secretos es un requisito de seguridad no negociable en arquitecturas distribuidas de producción. Almacenar credenciales en código fuente o repositorios representa una vulnerabilidad crítica. El Key Vault permite rotación de secretos sin redespliegue de servicios, auditoría de accesos y control de expiración. Mejora la postura de seguridad y facilita el cumplimiento de políticas institucionales, reduciendo la superficie de exposición ante compromisos parciales de infraestructura. Para entornos académicos de desarrollo puede simplificarse.<br><br>1. Driver 1: Seguridad<br>2. Driver 2: Capacidad para ser mantenido<br>3. Driver 3: Restricción de Negocio: Legal - Habeas Data | Adoptado |
+| Load Balancer | Vínculo | El balanceo de carga es un driver fundamental de escalabilidad y disponibilidad. Permite escalar horizontalmente los microservicios agregando instancias sin modificar la arquitectura. Facilita la continuidad del servicio ante fallos de instancias individuales, ya que el tráfico se redirige automáticamente a instancias saludables. En el contexto del sistema de asignación de aulas, donde pueden existir picos de demanda al inicio de semestres académicos, este componente es crítico para mantener el rendimiento y prevenir degradaciones por saturación de instancias individuales.<br><br>1. Driver 1: Escalabilidad<br>2. Driver 2: Disponibilidad<br>3. Driver 3: Rendimiento<br>4. Driver 4: Funcionalidad Crítica: Escalabilidad sin degradar rendimiento<br>5. Driver 5: Funcionalidad Crítica: Concurrencia sin inconsistencias | Adoptado |
+| Servicios Backend (Aplicación) | Vínculo | Este componente resuelve el reto de escalabilidad y rendimiento. Al ser stateless, se pueden añadir o quitar instancias del servicio en cualquier momento sin perder datos, lo cual es esencial para manejar grandes volúmenes de concurrencia. Además, encapsula la complejidad de los algoritmos de negocio y el procesamiento transaccional.<br><br>1. Driver 1: Escalabilidad<br>2. Driver 2: Rendimiento<br>3. Driver 3: Confiabilidad<br>4. Driver 4: Disponibilidad<br>5. Driver 5: Seguridad<br>6. Driver 6: Usabilidad<br>7. Driver 7: Capacidad para ser probado<br>8. Driver 8: Capacidad para ser mantenido<br>9. Driver 9: Capacidad para ser administrado<br>10. Driver 10: Funcionalidad Crítica: Asignación automática de aulas<br>11. Driver 11: Funcionalidad Crítica: Priorización por número de estudiantes<br>12. Driver 12: Funcionalidad Crítica: Reglas configurables de asignación<br>13. Driver 13: Funcionalidad Crítica: Validación integridad de datos<br>14. Driver 14: Funcionalidad Crítica: Carga masiva de datos<br>15. Driver 15: Funcionalidad Crítica: Actualización disponible en tiempo real<br>16. Driver 16: Funcionalidad Crítica: Concurrencia sin inconsistencias<br>17. Driver 17: Funcionalidad Crítica: Validación conflictos de horarios<br>18. Driver 18: Funcionalidad Crítica: Verificación cobertura total de asignación<br>19. Driver 19: Restricción Técnica: Patrón Strategy para múltiples algoritmos<br>20. Driver 20: Restricción Técnica: Patrón Repository para acceso a datos<br>21. Driver 21: Restricción Técnica: Control de transacciones<br>22. Driver 22: Restricción de Negocio: Legal - Habeas Data | Desarrollo propio |
+| Colas de Mensajes | Vínculo | Las colas de mensajes responden a los drivers de escalabilidad, resiliencia y rendimiento. Al desacoplar el procesamiento asíncrono de las operaciones síncronas del usuario, permiten absorber picos de demanda sin degradar la experiencia de uso. En el contexto del sistema, operaciones de alto costo computacional como la asignación masiva al inicio de semestre pueden delegarse a workers asíncronos, liberando los servicios principales para solicitudes en tiempo real. También garantizan la durabilidad de tareas ante fallos transitorios, mejorando la confiabilidad del sistema.<br><br>1. Driver 1: Escalabilidad<br>2. Driver 2: Confiabilidad<br>3. Driver 3: Rendimiento<br>4. Driver 4: Funcionalidad Crítica: Carga masiva de datos<br>5. Driver 5: Funcionalidad Crítica: Recalculo automático de asignaciones<br>6. Driver 6: Funcionalidad Crítica: Asignación automática masiva | Adoptado |
+| Workers | Vínculo | Los workers son el complemento natural de las colas de mensajes y responden al driver de rendimiento y escalabilidad. Al externalizar el procesamiento pesado a unidades de cómputo dedicadas, los servicios principales del sistema se mantienen ligeros y responsivos. En un sistema de gestión académica, la generación de reportes complejos o la validación masiva de conflictos son candidatos naturales para procesamiento en workers. Su naturaleza stateless permite escalar el número de instancias de forma elástica según la profundidad de las colas y la demanda del sistema.<br><br>1. Driver 1: Rendimiento<br>2. Driver 2: Escalabilidad<br>3. Driver 3: Funcionalidad Crítica: Carga masiva de datos<br>4. Driver 4: Funcionalidad Crítica: Simulación de asignación sin afectar datos reales<br>5. Driver 5: Restricción Técnica: Procesamiento por lotes asíncrono | Adoptado |
+| Monitoreo | Vínculo | El monitoreo es un driver transversal de operabilidad y disponibilidad. Sin visibilidad sobre el comportamiento en producción, la detección de degradaciones depende de reportes de usuarios, generando tiempos de reacción elevados. Un sistema de monitoreo proactivo permite identificar cuellos de botella antes de que afecten la disponibilidad, fundamentar decisiones de escalado y validar el cumplimiento de niveles de servicio. En el contexto académico, garantiza la continuidad operacional en periodos críticos como el inicio y cierre de semestre con alta concurrencia de usuarios.<br><br>1. Driver 1: Capacidad para ser administrado<br>2. Driver 2: Disponibilidad<br>3. Driver 3: Capacidad para ser soportado<br>4. Driver 4: Funcionalidad Crítica: Escalabilidad sin degradar rendimiento<br>5. Driver 5: Restricción Negocio: Tiempo - disponibilidad antes del semestre<br>6. Driver 6: Restricción Técnica: DevOps - Monitoreo técnico de disponibilidad y errores | Adoptado |
+| Logs | Vínculo | Los logs son el fundamento de la trazabilidad y auditabilidad del sistema. En un entorno institucional que gestiona asignaciones académicas, la capacidad de reconstruir el historial de operaciones es un requisito de auditoría ineludible con potenciales implicaciones normativas. Desde la perspectiva de mantenibilidad, los logs son la principal herramienta de diagnóstico para resolver incidentes en producción. Su centralización en un sistema dedicado evita la pérdida de registros ante fallos de instancias individuales y facilita la correlación de eventos entre múltiples servicios distribuidos.<br><br>1. Driver 1: Confiabilidad<br>2. Driver 2: Capacidad para ser mantenido<br>3. Driver 3: Escalabilidad<br>4. Driver 4: Capacidad para ser probado<br>5. Driver 5: Restricción de Negocio: Legal - Habeas Data<br>6. Driver 6: Restricción Técnica: DevOps - Integración continua y trazabilidad | Adoptado |
+| Base de Datos SQL | Vínculo | La base de datos relacional es el componente de persistencia central del sistema y responde a los drivers de rendimiento, disponibilidad y confiabilidad. La naturaleza transaccional de las operaciones de asignación donde múltiples entidades deben modificarse de forma atómica hace indispensable el soporte ACID. Las propiedades de integridad referencial garantizan que no puedan existir asignaciones huérfanas o inconsistentes.<br><br>1. Driver 1: Rendimiento<br>2. Driver 2: Disponibilidad<br>3. Driver 3: Confiabilidad<br>4. Driver 4: Capacidad de almacenamiento<br>5. Driver 5: Funcionalidad Crítica: Validación integridad de datos<br>6. Driver 6: Funcionalidad Crítica: Concurrencia sin inconsistencias<br>7. Restricción Técnica: Patrón Repository para acceso a datos | Adoptado |
+| Cache Distribuido | Vínculo | El caché es un driver de rendimiento y escalabilidad fundamental. En el sistema de asignación de aulas, datos como la disponibilidad de espacios, horarios activos y catálogos académicos son consultados frecuentemente por múltiples servicios. Sin caché, cada consulta implica un acceso a la base de datos con latencia asociada. Al distribuir el caché entre múltiples instancias, se garantiza su disponibilidad ante fallos parciales, evitando el fenómeno de *thundering herd* ante reinicios del sistema. La estrategia de invalidación de caché debe estar bien definida para garantizar la consistencia eventual de los datos de disponibilidad.<br><br>1. Driver 1: Rendimiento<br>2. Driver 2: Escalabilidad<br>3. Driver 3: Disponibilidad<br>4. Driver 4: Funcionalidad Crítica: Asignación automática de aulas<br>5. Driver 5: Funcionalidad Crítica: Actualización disponible en tiempo real | Adoptado |
+| WebSocket | Vínculo | La comunicación en tiempo real responde al driver de experiencia de usuario y eficiencia de red. En un sistema donde múltiples actores consultan y modifican la disponibilidad de espacios simultáneamente, el polling periódico introduce latencia innecesaria y sobrecarga al servidor. WebSocket permite que los cambios de disponibilidad se propaguen instantáneamente a todos los clientes conectados, mejorando la percepción de respuesta del sistema y reduciendo la probabilidad de conflictos al mostrar información actualizada sin intervención del usuario.<br><br>1. Driver 1: Usabilidad<br>2. Driver 2: Rendimiento<br>3. Driver 3: Confiabilidad<br>4. Driver 4: Accesibilidad<br>5. Driver 5: Funcionalidad Crítica: Actualización disponible en tiempo real<br>6. Driver 6: Funcionalidad Crítica: Validación conflicto de horarios | Adoptado |
+
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
+
+---
+
+## Arquitectura Referencial
+
+### Estilo Arquitectónico
+
+El sistema implementa una **arquitectura distribuida N-Tier** con las siguientes características:
+
+- **Enfoque stateless** en todos los servicios backend, permitiendo escalabilidad horizontal
+- **Modelo C4** (contenedores)
+- **Clean Architecture** con separación de capas: dominio, aplicación, infraestructura y presentación
+- **Principios SOLID** aplicados en todo el código
+- **Patrones de diseño**: Repository, Strategy y Factory
+
 ### Componentes de Desarrollo Propio
 
 | Componente | Fabricante | Nombre Comercial | Versión | Licenciamiento | Justificación | Motivación |
@@ -300,185 +369,58 @@ El sistema administra información relacionada con:
 | Cobertura de pruebas | Ned Batchelder | coverage.py | 7 | Open Source (Apache 2.0) | Mide cobertura de pruebas generando reportes por módulo. Integrado con pytest mediante pytest-cov. |
 | Linting y formato | Astral / PyCQA | Ruff + Black | 0.9 / 25 | Open Source (MIT) | Ruff reemplaza Flake8 en velocidad. Black formatea automáticamente según PEP 8. |
 
----
-
-## Arquitectura Referencial
-
-### Estilo Arquitectónico
-
-El sistema implementa una **arquitectura distribuida N-Tier** con las siguientes características:
-
-- **Enfoque stateless** en todos los servicios backend, permitiendo escalabilidad horizontal
-- **Modelo C4** (contenedores)
-- **Clean Architecture** con separación de capas: dominio, aplicación, infraestructura y presentación
-- **Principios SOLID** aplicados en todo el código
-- **Patrones de diseño**: Repository, Strategy y Factory
-
-### Descripción de Capas
-
-| Capa | Responsabilidad | Tecnologías |
-|---|---|---|
-| **Edge / Entrada** | Filtrado de tráfico, rate limiting, terminación SSL, distribución de contenido | Nginx 1.27 |
-| **Frontend** | Interfaz de usuario, renderizado HTML server-side, interacciones dinámicas | Django Templates, HTMX, Alpine.js, Tailwind, daisyUI |
-| **Seguridad** | Autenticación JWT, control de acceso por roles, captcha, sanitización | simplejwt, Django Auth, django-recaptcha, bleach |
-| **Backend** | Lógica de negocio, casos de uso, APIs REST | Django 5.2, DRF 3.15, Gunicorn, Daphne |
-| **Datos** | Persistencia relacional, caché distribuido, balanceo de carga | PostgreSQL 17, Valkey 8, django-redis |
-| **Procesamiento** | Tareas asíncronas, WebSockets, notificaciones en tiempo real | Celery 5.6, Django Channels 4.1, django-notifications-hq |
-| **Observabilidad** | Métricas, dashboards, logs centralizados | Prometheus 3, Grafana 12, Python logging |
+![Arqutectura-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUITECTURA REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
 ---
 
 ## Modelos de Arquitectura
 
+
 ### Modelo de Componentes
 
-Describe los componentes del sistema y sus interfaces de comunicación.
+#### Modelo de Componentes Backend
 
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
+#### Modelo de Componentes Frontend
 
-**Interfaces de comunicación:**
-
-| Componente origen | Componente destino | Protocolo | Descripción |
-|---|---|---|---|
-| Cliente | Nginx | HTTPS | Tráfico web cifrado |
-| Nginx | Gunicorn | HTTP | Proxy inverso para peticiones REST |
-| Nginx | Daphne | WSS | Proxy WebSocket para tiempo real |
-| Backend | PostgreSQL | TCP/IP | Consultas ORM via psycopg3 |
-| Backend | Valkey | TCP/IP | Caché de consultas frecuentes |
-| Celery | Valkey | AMQP | Cola de tareas asíncronas |
-| Django Channels | Valkey | TCP/IP | Channel layer WebSocket |
-| django-prometheus | Prometheus | HTTP | Scrape de métricas /metrics |
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
 ---
 
-### Modelo de Paquetes
+### Modelo de Paquetes 
 
-Estructura interna de paquetes siguiendo Clean Architecture.
+#### Modelo de Paquetes Backend
 
-```
-sistema-servicios-docentes/
-│
-├── backend/
-│   ├── core/                          # Paquete de infraestructura común
-│   │   ├── repositories.py            # BaseRepository (ABC)
-│   │   ├── services.py                # BaseService (ABC)
-│   │   ├── exceptions.py              # Excepciones base del sistema
-│   │   └── dtos.py                    # DTOs base reutilizables
-│   │
-│   ├── config/                        # Paquete de configuración
-│   │   ├── settings/
-│   │   │   ├── base.py               # Configuración común
-│   │   │   ├── dev.py                # Entorno desarrollo
-│   │   │   └── prod.py               # Entorno producción
-│   │   ├── urls.py                    # Enrutamiento raíz
-│   │   ├── asgi.py                    # Punto entrada ASGI
-│   │   └── wsgi.py                    # Punto entrada WSGI
-│   │
-│   └── apps/
-│       ├── asignacion/                # Paquete núcleo del sistema
-│       │   ├── domain/               # Capa dominio — Python puro
-│       │   │   ├── entities.py       # Asignacion, ReglaAsignacion
-│       │   │   ├── interfaces.py     # IAsignacionRepository, IStrategy
-│       │   │   └── exceptions.py     # AsignacionConflictoError
-│       │   ├── application/          # Capa aplicación — casos de uso
-│       │   │   ├── dtos.py           # AsignacionInputDTO, OutputDTO
-│       │   │   └── use_cases.py      # EjecutarAsignacion, Simular
-│       │   ├── infrastructure/       # Capa infraestructura — Django
-│       │   │   ├── models.py         # Modelos ORM
-│       │   │   ├── repositories.py   # Implementación concreta
-│       │   │   ├── strategies.py     # Estrategias de asignación
-│       │   │   └── tasks.py          # Tareas Celery
-│       │   ├── presentation/         # Capa presentación — vistas
-│       │   │   ├── serializers.py
-│       │   │   ├── views.py
-│       │   │   ├── urls.py
-│       │   │   └── templates/
-│       │   └── tests/
-│       │       ├── test_domain.py    # Tests sin Django
-│       │       ├── test_use_cases.py
-│       │       └── test_views.py
-│       │
-│       ├── academico/                 # Paquete entidades académicas
-│       │   ├── domain/               # Aula, Grupo, Docente, Curso
-│       │   ├── application/          # CrearGrupo, CargaMasiva
-│       │   ├── infrastructure/       # Modelos + Repositorios
-│       │   ├── presentation/         # Vistas + Templates
-│       │   └── tests/
-│       │
-│       ├── reservas/                  # Paquete reservas temporales
-│       │   ├── domain/               # Reserva, EstadoReserva
-│       │   ├── application/          # CrearReserva, Cancelar
-│       │   ├── infrastructure/       # Modelos + Tareas expiración
-│       │   ├── presentation/
-│       │   └── tests/
-│       │
-│       ├── usuarios/                  # Paquete actores y roles
-│       │   ├── domain/               # Usuario, Rol, Permiso
-│       │   ├── application/          # Autenticar, AsignarRol
-│       │   ├── infrastructure/
-│       │   ├── presentation/         # login.html, perfil.html
-│       │   └── tests/
-│       │
-│       ├── reportes/                  # Paquete generación reportes
-│       │   ├── domain/
-│       │   ├── application/          # GenerarReporteOcupacion
-│       │   ├── infrastructure/       # Tareas Celery asíncronas
-│       │   ├── presentation/
-│       │   └── tests/
-│       │
-│       └── notificaciones/            # Paquete WebSocket + alertas
-│           ├── domain/
-│           ├── application/          # EnviarNotificacion
-│           ├── infrastructure/       # consumers.py (Channels)
-│           ├── presentation/         # campana.html (HTMX partial)
-│           └── tests/
-│
-├── frontend/                          # Paquete assets y templates globales
-│   ├── templates/
-│   │   ├── base.html                 # Layout principal
-│   │   ├── partials/                 # navbar, sidebar, toast
-│   │   └── pages/                    # dashboard, 403, 404, 500
-│   └── static/
-│       ├── css/tailwind.css
-│       ├── js/                       # htmx, alpine, ws-notifications
-│       └── icons/                    # Heroicons SVG
-│
-└── nginx/
-    └── nginx.conf                     # Proxy inverso + WAF + SSL
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
-Regla de dependencias entre capas:
-domain       ◄── no depende de nada externo
-application  ◄── depende solo de domain
-infrastructure ◄── depende de domain + application + Django
-presentation ◄── depende solo de application
-```
+#### Modelo de Paquetes Frontend
+
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
 ---
 
-### Modelo de Despliegue
+### Modelo Arquitectura por Capas Lógicas
 
-Describe la distribución física de los componentes en contenedores Docker.
+#### Modelo Arquitectura por Capas Lógicas Backend
 
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
+#### Modelo Arquitectura por Capas Lógicas Frontend
 
-**Nodos del despliegue:**
-
-| Contenedor | Imagen base | Puerto interno | Rol |
-|---|---|---|---|
-| `nginx` | nginx:1.27-alpine | 80, 443 | Proxy inverso, WAF, SSL |
-| `django` | python:3.13-slim | 8000 | Aplicación HTTP (Gunicorn) |
-| `daphne` | python:3.13-slim | 8001 | WebSocket ASGI (Daphne) |
-| `celery` | python:3.13-slim | — | Worker tareas asíncronas |
-| `postgres` | postgres:17-alpine | 5432 | Base de datos relacional |
-| `valkey` | valkey/valkey:8-alpine | 6379 | Caché + Broker + Channels |
-| `prometheus` | prom/prometheus:v3 | 9090 | Recolección de métricas |
-| `grafana` | grafana/grafana:12 | 3000 | Visualización de métricas |
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
 ---
 
 ### Modelo de Secuencia
 
+#### Modelo de Secuencia Backend
 
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
+
+#### Modelo de Secuencia Frontend
+
+![Arquetipo-de-Referencia-Universidad-Cátolica-de-Oriente](DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
 
 ---
 
@@ -609,6 +551,10 @@ main          ← código estable — releases de producción
 | 21 | Git + ramificación | GitHub + feature/develop/main | 
 | 22 | OWASP ZAP + Sanitizer | OWASP ZAP 2.15 + bleach 6.x | 
 | 23 | Caché distribuida | Valkey + django-redis |
+
+---
+
+![Universidad-Cátolica-de-Oriente](universidad-catolica-de-oriente.png)
 
 ---
 
