@@ -422,13 +422,13 @@ Los siguientes modelos de arquitectura por capas lógicas muestran la separació
 
 El siguiente modelo de arquitectura por capas lógicas backend representa la distribución interna de responsabilidades del servidor, con el fin de mostrar la interacción entre las capas de presentación, aplicación, dominio e infraestructura durante el procesamiento de solicitudes y operaciones críticas del sistema.
 
-![Modelo-Capas-Logicas-Backend](assets/images/.png)
+![Modelo-Capas-Logicas-Backend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-ArquitecturaporCapasLógicas Back End.drawio.png)
 
 #### Modelo Arquitectura por Capas Lógicas Frontend
 
 El siguiente modelo de arquitectura por capas lógicas frontend muestra la organización funcional de la interfaz de usuario, permitiendo comprender la relación entre componentes visuales, manejo de estados, renderizado dinámico e interacción con los servicios backend
 
-![Modelo-Capas-Logicas-Frontend](assets/images/.png)
+![Modelo-Capas-Logicas-Frontend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-ArquitecturaporCapasLógicas Front End.drawio.png)
 
 ---
 
@@ -440,13 +440,13 @@ Los siguientes modelos de secuencia muestran la interacción general entre los d
 
 El siguiente modelo de secuencia backend representa el flujo interno de procesamiento de solicitudes dentro del servidor, permitiendo identificar la interacción entre controladores, casos de uso, servicios, repositorios, base de datos y componentes de procesamiento asíncrono.
 
-![Modelo-Secuencia-Backend](assets/images/.png)
+![Modelo-Secuencia-Backend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-Modelo de Secuencia Back End.png)
 
 #### Modelo de Secuencia Frontend
 
 El siguiente modelo de secuencia frontend muestra el flujo de interacción entre el usuario, la interfaz gráfica y los componentes dinámicos del cliente, con el fin de representar cómo se gestionan las solicitudes, actualizaciones visuales y comunicación con los servicios backend.
 
-![Modelo-Secuencia-Frontend](assets/images/.png)
+![Modelo-Secuencia-Frontend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-Modelo de Secuencia Front End.png)
 
 ---
 
