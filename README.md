@@ -258,7 +258,7 @@ El siguiente arquetipo de referencia presenta los componentes para el desarrollo
 | Cache Distribuido | El caché es un driver de rendimiento y escalabilidad fundamental. En el sistema de asignación de aulas, datos como la disponibilidad de espacios, horarios activos y catálogos académicos son consultados frecuentemente por múltiples servicios. Sin caché, cada consulta implica un acceso a la base de datos con latencia asociada. Al distribuir el caché entre múltiples instancias, se garantiza su disponibilidad ante fallos parciales, evitando el fenómeno de *thundering herd* ante reinicios del sistema. La estrategia de invalidación de caché debe estar bien definida para garantizar la consistencia eventual de los datos de disponibilidad.<br><br>1. Driver 1: Rendimiento<br>2. Driver 2: Escalabilidad<br>3. Driver 3: Disponibilidad<br>4. Driver 4: Funcionalidad Crítica: Asignación automática de aulas<br>5. Driver 5: Funcionalidad Crítica: Actualización disponible en tiempo real | Adoptado |
 | WebSocket | La comunicación en tiempo real responde al driver de experiencia de usuario y eficiencia de red. En un sistema donde múltiples actores consultan y modifican la disponibilidad de espacios simultáneamente, el polling periódico introduce latencia innecesaria y sobrecarga al servidor. WebSocket permite que los cambios de disponibilidad se propaguen instantáneamente a todos los clientes conectados, mejorando la percepción de respuesta del sistema y reduciendo la probabilidad de conflictos al mostrar información actualizada sin intervención del usuario.<br><br>1. Driver 1: Usabilidad<br>2. Driver 2: Rendimiento<br>3. Driver 3: Confiabilidad<br>4. Driver 4: Accesibilidad<br>5. Driver 5: Funcionalidad Crítica: Actualización disponible en tiempo real<br>6. Driver 6: Funcionalidad Crítica: Validación conflicto de horarios | Adoptado |
 
-![Arquetipo-de-Referencia](assets/images/DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUETIPO REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
+![Arquetipo-de-Referencia](assets/images/arquetipo-referencial.png)
 
 ---
 
@@ -371,7 +371,7 @@ El sistema implementa una **arquitectura distribuida N-Tier** con las siguientes
 | Cobertura de pruebas | Ned Batchelder | coverage.py | 7 | Open Source (Apache 2.0) | Mide cobertura de pruebas generando reportes por módulo. Integrado con pytest mediante pytest-cov. |
 | Linting y formato | Astral / PyCQA | Ruff + Black | 0.9 / 25 | Open Source (MIT) | Ruff reemplaza Flake8 en velocidad. Black formatea automáticamente según PEP 8. |
 
-![Arqutectura-de-Referencia](assets/images/DIAGRAMA DE ALTO NIVEL - SISTEMA DE SERVICIOS DOCENTES - UCO-ARQUITECTURA REFERENCIAL - SISTEMAS DE SERVICIOS DOCENTES - UCO.drawio.png)
+![Arqutectura-de-Referencia](assets/images/arquitectura-referencial.png)
 
 ---
 
@@ -386,13 +386,13 @@ Los siguientes modelos de componentes representan los principales módulos funci
 
 El siguiente modelo de componentes backend muestran la organización de los servicios, módulos y componentes internos del servidor, permitiendo identificar la distribución de responsabilidades relacionadas con lógica de negocio, procesamiento de datos, autenticación, asignación automática y comunicación con la infraestructura tecnológica.
 
-![Modelo-Componentes-Backend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-Modelo de Componentes Backend.drawio.png)
+![Modelo-Componentes-Backend](assets/images/modelo-componentes-backend.png)
 
 #### Modelo de Componentes Frontend
 
 El siguiente modelo de componentes frontend representa la estructura de la interfaz de usuario y los componentes visuales del sistema, con el fin de evidenciar la interacción entre vistas, plantillas, componentes dinámicos y mecanismos de comunicación con los servicios backend.
 
-![Modelo-Componentes-Frontend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-Modelo de Componentes Frontend.drawio.png)
+![Modelo-Componentes-Frontend](assets/images/modelo-componentes-frontend.png)
 
 ---
 
@@ -404,13 +404,13 @@ Los siguientes modelos de paquetes muestran la organización lógica del sistema
 
 El siguiente modelo de paquetes backend presenta la estructura interna de módulos y paquetes del servidor, con el fin de representar la separación entre capas de dominio, aplicación, infraestructura y presentación, favoreciendo mantenibilidad, escalabilidad y desacoplamiento del sistema.
 
-![Modelo-Paquetes-Backend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-Modelo de Paquetes.drawio.png)
+![Modelo-Paquetes-Backend](assets/images/modelo-paquetes-backend.png)
 
 #### Modelo de Paquetes Frontend
 
 El siguiente modelo de paquetes frontend representa la organización de plantillas, archivos estáticos, componentes visuales y recursos de interfaz, permitiendo evidenciar la estructura utilizada para mantener consistencia y reutilización en la experiencia de usuario.
 
-![Modelo-Paquetes-Frontend](assets/images/DIAGRAMAS - SISTEMASERVICIOSDOCENTES - INGENIERÍASOFTWARE2-Modelo de Paquetes Frontend.drawio.png)
+![Modelo-Paquetes-Frontend](assets/images/modelo-paquetes-frontend.png)
 
 ---
 
@@ -422,13 +422,13 @@ Los siguientes modelos de arquitectura por capas lógicas muestran la separació
 
 El siguiente modelo de arquitectura por capas lógicas backend representa la distribución interna de responsabilidades del servidor, con el fin de mostrar la interacción entre las capas de presentación, aplicación, dominio e infraestructura durante el procesamiento de solicitudes y operaciones críticas del sistema.
 
-![Modelo-Capas-Logicas-Backend](assets/images/.png)
+![Modelo-Capas-Logicas-Backend](assets/images/capas-logicas-backend.png)
 
 #### Modelo Arquitectura por Capas Lógicas Frontend
 
 El siguiente modelo de arquitectura por capas lógicas frontend muestra la organización funcional de la interfaz de usuario, permitiendo comprender la relación entre componentes visuales, manejo de estados, renderizado dinámico e interacción con los servicios backend
 
-![Modelo-Capas-Logicas-Frontend](assets/images/.png)
+![Modelo-Capas-Logicas-Frontend](assets/images/capas-logicas-frontend.png)
 
 ---
 
@@ -440,13 +440,13 @@ Los siguientes modelos de secuencia muestran la interacción general entre los d
 
 El siguiente modelo de secuencia backend representa el flujo interno de procesamiento de solicitudes dentro del servidor, permitiendo identificar la interacción entre controladores, casos de uso, servicios, repositorios, base de datos y componentes de procesamiento asíncrono.
 
-![Modelo-Secuencia-Backend](assets/images/.png)
+![Modelo-Secuencia-Backend](assets/images/modelo-secuencia-backend.png)
 
 #### Modelo de Secuencia Frontend
 
 El siguiente modelo de secuencia frontend muestra el flujo de interacción entre el usuario, la interfaz gráfica y los componentes dinámicos del cliente, con el fin de representar cómo se gestionan las solicitudes, actualizaciones visuales y comunicación con los servicios backend.
 
-![Modelo-Secuencia-Frontend](assets/images/.png)
+![Modelo-Secuencia-Frontend](assets/images/modelo-secuencia-frontend.png)
 
 ---
 
@@ -580,7 +580,7 @@ main          ← código estable — releases de producción
 
 ---
 
-![Universidad-Cátolica-de-Oriente](universidad-catolica-de-oriente.png)
+![Universidad-Cátolica-de-Oriente](assets/images/universidad-catolica-de-oriente.png)
 
 ---
 
