@@ -51,12 +51,12 @@ La documentación técnica del proyecto describe:
 ## Tabla de Contenidos
 
 1. [Descripción del Proyecto](#descripción-del-proyecto)
-2. [Especificación de Requisitos](#especificación-requisitos)
+2. [Especificación de Requisitos](#especificación-de-requisitos)
    - [Propósito](#propósito)
-   - [Alcance del Sistema](#alcance-sistema)
+   - [Alcance del Sistema](#alcance-del-sistema)
    - [Funcionalidades Principales](#funcionalidades-principales)
    - [Requisitos No Funcionales](#requisitos-no-funcionales)
-   - [Requisitos de Información](#requisitos-información)
+   - [Requisitos de Información](#requisitos-de-información)
    - [Requisitos Futuros](#requisitos-futuros)
 3. [Drivers Arquitectónicos](#drivers-arquitectónicos)
    - [Atributos de Calidad](#atributos-de-calidad)
@@ -76,16 +76,16 @@ La documentación técnica del proyecto describe:
      - [Modelo Arquitectura por Capas Lógicas Backend](#modelo-arquitectura-por-capas-lógicas-backend)
      - [Modelo Arquitectura por Capas Lógicas Frontend](#modelo-arquitectura-por-capas-lógicas-frontend)
    - [Modelo de Secuencia](#modelo-de-secuencia)
-     -[Modelo de Secuencia Backend](#modelo-secuencia-backend)
-     -[Modelo de Secuencia Frontend](#modelo-secuencia-frontend)
+     -[Modelo de Secuencia Backend](#modelo-de-secuencia-backend)
+     -[Modelo de Secuencia Frontend](#modelo-de-secuencia-frontend)
 7. [Instalación y Ejecución](#instalación-y-ejecución)
    -[Prerrequisitos](#prerrequisitos)
-   -[Levantar el proyecto](#levantar-proyecto)
-   -[URLs del sistema](#urls-sistema)
+   -[Levantar el proyecto](#levantar-el-proyecto)
+   -[URLs del sistema](#urls-del-sistema)
    -[Ejecutar pruebas](#ejecutar-pruebas)
 8. [Roles del Sistema](#roles-del-sistema)
-9. [Estrategia de Ramificación Git](#estrategia-ramificación-git)
-10. [Línea Base del Sistema](#linea-base-sistema)
+9. [Estrategia de Ramificación Git](#estrategia-de-ramificación-git)
+10. [Línea Base del Sistema](#línea-base-del-sistema)
 
 ---
 
