@@ -1,0 +1,128 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sistema_servicios_docentes}
+      POSTGRES_USER: ${POSTGRES_USER:-servicios_docentes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicios_docentes}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: valkey-server --appendonly yes
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  django:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      POSTGRES_HOST: postgres
+      VALKEY_HOST: valkey
+      CELERY_BROKER_URL: redis://valkey:6379/0
+      CELERY_RESULT_BACKEND: redis://valkey:6379/0
+    env_file:
+      - .env
+    volumes:
+      - staticfiles:/app/staticfiles
+      - media:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  daphne:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      POSTGRES_HOST: postgres
+      VALKEY_HOST: valkey
+      CELERY_BROKER_URL: redis://valkey:6379/0
+      CELERY_RESULT_BACKEND: redis://valkey:6379/0
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  celery:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: celery -A config worker --loglevel=info
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      POSTGRES_HOST: postgres
+      VALKEY_HOST: valkey
+      CELERY_BROKER_URL: redis://valkey:6379/0
+      CELERY_RESULT_BACKEND: redis://valkey:6379/0
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - staticfiles:/usr/share/nginx/html/static:ro
+      - media:/usr/share/nginx/html/media:ro
+    depends_on:
+      - django
+      - daphne
+
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./nginx/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - django
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_SECURITY_ADMIN_PASSWORD:-password}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  valkey_data:
+  staticfiles:
+  media:
+  prometheus_data:
+  grafana_data:

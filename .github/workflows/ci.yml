@@ -1,0 +1,70 @@
+name: CI Pipeline for Sistema de Servicios Docentes
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - feature/*
+  pull_request:
+    branches:
+      - develop
+      - main
+      - feature/*
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: sistema_servicios_docentes
+          POSTGRES_USER: servicios_docentes
+          POSTGRES_PASSWORD: servicios_docentes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U servicios_docentes -d sistema_servicios_docentes"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SECRET_KEY: clave-ci
+      POSTGRES_DB: sistema_servicios_docentes
+      POSTGRES_USER: servicios_docentes
+      POSTGRES_PASSWORD: servicios_docentes
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      VALKEY_HOST: localhost
+      VALKEY_PORT: 6379
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/0
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements/dev.txt
+
+      - name: Ejecutar Ruff
+        run: ruff check backend
+
+      - name: Verificar formato con Black
+        run: black --check backend
+
+      - name: Ejecutar pruebas con cobertura
+        run: pytest-django --cov=backend --cov-report=term-missing
