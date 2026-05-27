@@ -1,0 +1,45 @@
+{# frontend/templates/partials/navbar.html #}
+
+<header class="bg-white shadow sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        {# Logo y Título del Sistema #}
+        <div class="flex items-center">
+            <a href="{{ url('dashboard') }}" class="text-2xl font-bold text-indigo-700">UCO SDS</a>
+        </div>
+
+        {# Menú de Navegación (Adaptable por Roles) #}
+        <nav class="hidden md:flex space-x-6 items-center">
+            {# Aquí irán enlaces basados en el rol del usuario. Usaremos AlpineJS para la lógica simple. #}
+            <a href="{{ url('dashboard') }}" class="text-gray-600 hover:text-indigo-700 transition duration-150 ease-in-out">Dashboard</a>
+
+            {# Ejemplo de enlace para la gestión académica #}
+            {% if 'Líder DOC' in user.role or 'Admin' in user.role %}
+                <a href="{{ url('academico:list_aula') }}" class="text-gray-600 hover:text-indigo-700 transition duration-150 ease-in-out">Académico</a>
+            {% endif %}
+
+            {# Ejemplo de enlace para Usuarios/Perfil #}
+            <a href="{{ url('usuarios:perfil') }}" class="text-gray-600 hover:text-indigo-700 transition duration-150 ease-in-out">Mi Perfil</a>
+        </nav>
+
+        {# Acciones de Usuario y Notificaciones #}
+        <div class="flex items-center space-x-4">
+            {# Botón de perfil/dropdown #}
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" class="text-gray-600 hover:text-indigo-700 focus:outline-none">
+                    <img src="{{ user.profile_pic.url }}" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-transparent transition duration-150 ease-in-out transform {{ open ? 'border-indigo-700' : '' }} hover:scale-[1.05]"/>
+                </button>
+            </div>
+
+            {# Contador de Notificaciones (Integra el WebSocket) #}
+            <div class="relative">
+                <button @click="$root.showToast()" id="notification-btn" class="text-gray-600 hover:text-indigo-700 focus:outline-none p-2 relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17l-2-2m0 0l-2 2m2-2v2m0-4V8"></path></svg>
+                    {# Contador de notificaciones (maneja JS en ws-notifications.js) #}
+                    <span id="notification-badge" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-800 transform translate-y-[-5px] scale-100 rounded-full bg-red-600">
+                        {{ notification_count|default:0 }}
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>

@@ -1,0 +1,77 @@
+{# frontend/templates/base.html #}
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <title>{% block title %}Sistema SDS UCO{% endblock %}</title>
+
+    <!-- 1. Tailwind CSS & daisyUI (Asumimos que 'django-tailwind' lo procesa) -->
+    <link href="{% static 'css/tailwind.css' %}" rel="stylesheet">
+
+    <!-- 2. Alpine.js para interactividad local -->
+    <script defer src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 antialiased">
+
+    {# 3. El Sidebar es un partial #}
+    {% include "partials/sidebar.html" %}
+
+    {# 4. La Navbar es un partial y contiene la lógica de notificaciones #}
+    {% include "partials/navbar.html" %}
+
+    <div class="flex pt-0">
+        {# Contenedor Principal: Aquí se insertará el contenido de la página (ej. dashboard.html) #}
+        <main id="main-app" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-8rem)]">
+            {% block content %}
+                {# Contenido de la página específica va aquí #}
+            {% endblock %}
+        </main>
+
+        {# 5. El Toast debe estar fuera del main para que se superponga correctamente #}
+        {% include "partials/toast.html" %}
+    </div>
+
+    {# SCRIPTS GLOBALES (JS) #}
+    <script src="{% static 'js/htmx.min.js' %}"></script>
+    <script src="{% static 'js/alpine.min.js' %}"></script>
+
+    {# 6. Script de Notificaciones WebSocket (Conexión en tiempo real) #}
+    <script src="{% static 'js/ws-notifications.js' %}"></script>
+
+    {# 7. JS para inicializar AlpineJS y manejar el estado global del toast #}
+    <script>
+        // Inicialización de Alpine store para el Toast (Debe coincidir con la lógica en partials/toast.html)
+        window.Alpine = function() {
+            return Alpine.initTree(function () {
+                document.addEventListener('alpine:init', () => {
+                    Alpine.store('toast', {
+                        open: false,
+                        message: '',
+                        type: '',
+                        closeToast() {
+                            this.open = false;
+                        },
+                        showToast(data) {
+                            if (!data || !data.message) return;
+
+                            this.message = data.message;
+                            this.type = data.type; // ej: "CONFLICTO", "ASIGNADO"
+                            this.open = true;
+                            // Forzar reflow para que la transición de aparición funcione
+                            setTimeout(() => {
+                                Alpine.store('toast', { open: true });
+                            }, 10);
+
+                            // Auto-cierre después de 7 segundos
+                            setTimeout(() => this.closeToast(), 7000);
+                        }
+                    });
+                });
+            });
+        };
+    </script>
+
+</body>
+</html>

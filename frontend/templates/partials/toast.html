@@ -1,0 +1,44 @@
+{# frontend/templates/partials/toast.html #}
+
+{# Este componente es invisible por defecto y solo se mostrará con JavaScript (AlpineJS) al recibir una notificación WebSocket. #}
+<div id="notification-toast" class="fixed bottom-4 right-4 z-50 w-full max-w-md space-y-3 transition duration-500 transform translate-x-full opacity-0" x-data="{ open: false }">
+    {# Notificación única #}
+    <div x-show="open" x-transition:enter.duration.300ms x-transition:leave.duration.200ms @click="$root.closeToast()">
+        <div class="bg-white shadow-lg border-l-4 border-indigo-500 p-4 flex justify-between items-center">
+            <div>
+                <p class="text-sm text-gray-500" x-text="notification_type"></p>
+                <h3 class="text-lg font-semibold text-gray-900 mt-1" x-text="notification_message"></h3>
+            </div>
+            <button @click="$root.closeToast()" class="ml-4 text-gray-400 hover:text-gray-700">&times;</button>
+        </div>
+    </div>
+</div>
+
+{# Script global de Alpine.js para manejar el estado del toast #}
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('toast', {
+            open: false,
+            message: '',
+            type: '',
+            closeToast() {
+                this.open = false;
+                // Opcionalmente añadir animación de salida aquí
+            },
+            showToast(data) {
+                if (!data || !data.message) return;
+
+                this.message = data.message;
+                this.type = data.type; // ej: "CONFLICTO", "ASIGNADO"
+                this.open = true;
+                // Forzar reflow para que la transición de aparición funcione
+                setTimeout(() => {
+                    Alpine.store('toast', { open: true });
+                }, 10);
+
+                // Auto-cierre después de 7 segundos
+                setTimeout(() => this.closeToast(), 7000);
+            }
+        });
+    });
+</script>
