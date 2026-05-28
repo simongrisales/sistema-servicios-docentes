@@ -1,45 +1,53 @@
-# backend/apps/notificaciones/domain/entities.py
-
+from dataclasses import dataclass
 from datetime import datetime
-from typing import List
-# Importar posibles enums de sistema si se usan (Ejemplo: Rol)
-# from sistemaserviciosdocentes.backend.core.models import RolModel
+from uuid import uuid4
+
 
 class TipoNotificacion:
-    """Clase simple para definir tipos de notificaciones conocidas."""
-    CONFLICTO = "conflict"        # Aula o recurso en conflicto con otro evento.
-    CONFIRMACION = "confirmation"  # Una acción crítica fue confirmada (ej. asignación final).
-    ALERTA_MANTENIMIENTO = "maintenance" # Aviso general del sistema.
-    INFO_USUARIO = "user_info"    # Información relevante sobre el usuario o su cuenta.
+    """Tipos institucionales soportados por el modulo de notificaciones."""
 
-class Notificacion:
-    """Entidad de Dominio para una notificación."""
-    def __init__(self,
-                 notificacion_id: str,
-                 tipo: str,
-                 titulo: str,
-                 mensaje: str,
-                 fecha_creacion: datetime,
-                 usuario_destino_id: str, # ID del usuario que recibirá la notificación
-                 lectura_requerida: bool = True):
-        self.notificacion_id = notificacion_id
-        self.tipo = tipo
-        self.titulo = titulo
-        self.mensaje = mensaje
-        self.fecha_creacion = fecha_creacion
-        self.usuario_destino_id = usuario_destino_id
-        self.lectura_requerida = lectura_requerida
+    CONFLICTO = "conflict"
+    CONFIRMACION = "confirmation"
+    ALERTA_MANTENIMIENTO = "maintenance"
+    INFO_USUARIO = "user_info"
 
     @classmethod
-    def crear(cls, notification_id: str, tipo: str, titulo: str, mensaje: str, destino_id: str) -> 'Notificacion':
-        """Método de fábrica para crear una notificación."""
+    def values(cls) -> tuple[str, ...]:
+        return (
+            cls.CONFLICTO,
+            cls.CONFIRMACION,
+            cls.ALERTA_MANTENIMIENTO,
+            cls.INFO_USUARIO,
+        )
+
+
+@dataclass(frozen=True)
+class Notificacion:
+    """Entidad de dominio pura para una notificacion del sistema."""
+
+    notificacion_id: str
+    tipo: str
+    titulo: str
+    mensaje: str
+    fecha_creacion: datetime
+    usuario_destino_id: str
+    lectura_requerida: bool = True
+    es_leida: bool = False
+
+    @classmethod
+    def crear(
+        cls,
+        tipo: str,
+        titulo: str,
+        mensaje: str,
+        destino_id: str,
+        notification_id: str | None = None,
+    ) -> "Notificacion":
         return cls(
-            notification_id=notification_id,
+            notificacion_id=notification_id or str(uuid4()),
             tipo=tipo,
             titulo=titulo,
             mensaje=mensaje,
-            fecha_creacion=datetime.utcnow(), # Usar UTC para consistencia
-            usuario_destino_id=destino_id
+            fecha_creacion=datetime.utcnow(),
+            usuario_destino_id=destino_id,
         )
-
-# Nota: La lógica de "TipoNotificacion" y las constantes deben estar centralizadas en el proyecto core/enums si crece.

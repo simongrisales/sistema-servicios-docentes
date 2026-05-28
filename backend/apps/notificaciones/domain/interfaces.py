@@ -1,37 +1,28 @@
-# backend/apps/notificaciones/domain/interfaces.py
-
 from abc import ABC, abstractmethod
-from typing import List, Optional
-from sistemaserviciosdocentes.backend.apps.notificaciones.domain.entities import Notificacion
-from datetime import datetime
+from collections.abc import Iterable
+
+from .entities import Notificacion
+
 
 class INotificacionRepository(ABC):
-    """
-    Interfaz de repositorio para la capa de Notificaciones.
-    Define el contrato abstracto para todas las operaciones de persistencia.
-    """
+    """Contrato de persistencia para notificaciones."""
 
     @abstractmethod
-    def get_by_id(self, notificacion_id: str) -> Optional[Notificacion]:
-        """Obtiene una notificación por su ID."""
-        pass
+    def get_by_id(self, notificacion_id: str) -> Notificacion | None:
+        raise NotImplementedError
 
     @abstractmethod
-    def create_notification(self, notification: Notificacion) -> None:
-        """Persiste una nueva notificación en el sistema."""
-        pass
+    def create_notification(self, notification: Notificacion) -> Notificacion:
+        raise NotImplementedError
 
     @abstractmethod
     def mark_as_read(self, notificacion_id: str, user_id: str) -> bool:
-        """Marca la notificación como leída para un usuario específico."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def get_unread_notifications_for_user(self, user_id: str) -> List[Notificacion]:
-        """Recupera todas las notificaciones no leídas y ordenadas por fecha."""
-        pass
+    def get_unread_notifications_for_user(self, user_id: str) -> Iterable[Notificacion]:
+        raise NotImplementedError
 
     @abstractmethod
-    def list_all_notifications_for_user(self, user_id: str) -> List[Notificacion]:
-        """Lista el historial completo de notificaciones para un usuario."""
-        pass
+    def list_all_notifications_for_user(self, user_id: str) -> Iterable[Notificacion]:
+        raise NotImplementedError

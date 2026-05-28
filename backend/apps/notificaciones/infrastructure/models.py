@@ -1,49 +1,47 @@
-# backend/apps/notificaciones/infrastructure/models.py
-
+from django.conf import settings
 from django.db import models
-from sistemaserviciosdocentes.backend.core.models import AbstractModel # Asumiendo la existencia de un modelo base Core
-from systemserviciosdocentes.backend.apps.usuarios.domain.entities import Usuario # Referencia a entidad usuario para Foreign Key si aplica
 
-class NotificacionModel(AbstractModel):
-    """Modelo Django ORM para almacenar notificaciones."""
+from ..domain.entities import TipoNotificacion
 
-    # Campos de Identificación y Metadata
-    UUID_NOTIFICACION = models.CharField("ID ÚNICO", max_length=36, unique=True) # UUID o hash único
-    TIPO_CHOICES = [
-        ('CONFLICTO', 'Conflicto'),
-        ('CONFIRMACION', 'Confirmación'),
-        ('ALERTA_MANTENIMIENTO', 'Alerta de Mantenimiento'),
-        ('INFO_USUARIO', 'Info Usuario')
-    ]
-    TIPO = models.CharField(max_length=50, choices=TIPO_CHOICES)
 
-    # Contenido
-    TITULO = models.CharField(max_length=255)
-    MENSAJE = models.TextField()
+class NotificacionModel(models.Model):
+    """Modelo ORM para el catalogo operativo de notificaciones in-app."""
 
-    # Destinatario y Estado
-    USUARIO_DESTINO = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name="notificaciones_recibidas") # Foreign Key al usuario que recibe la alerta
-    DESTAQUADO = models.BooleanField(default=False)
-    ES_LEIDA = models.BooleanField(default=False)
+    class Tipo(models.TextChoices):
+        CONFLICTO = TipoNotificacion.CONFLICTO, "Conflicto"
+        CONFIRMACION = TipoNotificacion.CONFIRMACION, "Confirmacion"
+        ALERTA_MANTENIMIENTO = (
+            TipoNotificacion.ALERTA_MANTENIMIENTO,
+            "Alerta de mantenimiento",
+        )
+        INFO_USUARIO = TipoNotificacion.INFO_USUARIO, "Informacion de usuario"
 
-    # Timestamps
-    FECHA_CREACION = models.DateTimeField(auto_now_add=True)
-    ESTADO_ACTIVO = models.BooleanField(default=True)
+    notificacion_id = models.CharField(max_length=36, unique=True, db_index=True)
+    tipo = models.CharField(max_length=32, choices=Tipo.choices)
+    titulo = models.CharField(max_length=255)
+    mensaje = models.TextField()
+    usuario_destino = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notificaciones_recibidas",
+    )
+    lectura_requerida = models.BooleanField(default=True)
+    es_leida = models.BooleanField(default=False, db_index=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
+    fecha_lectura = models.DateTimeField(null=True, blank=True)
+    activo = models.BooleanField(default=True)
 
     class Meta:
-        verbose_name = "Notificación"
-        ordering = ['-fecha_creacion'] # Más recientes primero
+        db_table = "notificaciones_notificacion"
+        ordering = ["-fecha_creacion"]
+        indexes = [
+            models.Index(
+                fields=["usuario_destino", "es_leida", "activo"],
+                name="notif_usuario_estado_idx",
+            )
+        ]
+        verbose_name = "Notificacion"
+        verbose_name_plural = "Notificaciones"
 
-    # Método de utilidad para simular la creación (lo usarán los repositorios)
-    @classmethod
-    def create_raw(cls, notificacion_id: str, tipo: str, titulo: str, mensaje: str, usuario_destino: 'Usuario', destacado: bool = False):
-        """Crea una instancia temporal sin guardar en DB para su uso interno."""
-        return cls(
-            UUID_NOTIFICACION=notificacion_id,
-            TIPO=tipo,
-            TITULO=titulo,
-            MENSAJE=mensaje,
-            USUARIO_DESTINO=usuario_destino,
-            DESTAQUADO=destacado,
-            ES_LEIDA=False
-        )
+    def __str__(self) -> str:
+        return f"{self.titulo} -> {self.usuario_destino_id}"

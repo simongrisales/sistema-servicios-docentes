@@ -10,5 +10,11 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
+    path("api/", include("apps.usuarios.presentation.urls")),
+    path("api/", include("apps.academico.presentation.urls")),
+    path("api/", include("apps.asignacion.presentation.urls")),
+    path("api/", include("apps.reservas.presentation.urls")),
+    path("api/", include("apps.reportes.presentation.urls")),
+    path("api/", include("apps.notificaciones.presentation.urls")),
     path("", include("django_prometheus.urls")),
 ]

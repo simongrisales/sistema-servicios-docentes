@@ -1,44 +1,73 @@
-from abc import ABC, abstractmethod
-from typing import List
-from ..domain.entities import Grupo, Aula, HorarioBloque
+from collections.abc import Iterable
+from typing import Any
 
-# Importaciones de Modelos ORM para la implementación
-from .models import *
+from core.repositories import BaseRepository
+
+from ..domain.entities import Asignacion
+from ..domain.interfaces import IAsignacionRepository
+from .models import AsignacionModel
 
 
-class BaseRepository(ABC):
-    """Clase base que proporciona métodos CRUD genéricos y transaccionales."""
-    @abstractmethod
-    def get_by_id(self, id: int) -> Optional[Any]: pass
+class AsignacionRepository(
+    BaseRepository[Asignacion, int],
+    IAsignacionRepository,
+):
+    def get(self, entity_id: int) -> Asignacion | None:
+        model = AsignacionModel.objects.filter(id=entity_id).first()
+        return self._to_domain(model) if model else None
 
-# --- Implementación Concreta del Repositorio de Asignaciones ---
-class AcademicoRepository(BaseRepository):
-    """Implementa la lógica de persistencia usando el ORM de Django."""
+    def list(self, **filters: Any) -> Iterable[Asignacion]:
+        return [
+            self._to_domain(model)
+            for model in AsignacionModel.objects.filter(**filters)
+        ]
 
-    def __init__(self, grupo_repo=None, aula_repo=None):
-        # Inicializar con repositorios dependientes (mockeados o reales)
-        pass
+    def create(self, data: dict[str, Any]) -> Asignacion:
+        return self._to_domain(AsignacionModel.objects.create(**data))
 
-    @abstractmethod
-    def get_grupo(self, grupo_id: int) -> Optional[Grupo]:
-        """Implementación de IGrupoRepository.get_grupo."""
-        # Aquí se consultaría GrupoModel para mapearlo a Grupo entidad
-        return None # Placeholder
+    def update(self, entity_id: int, data: dict[str, Any]) -> Asignacion:
+        model = AsignacionModel.objects.get(id=entity_id)
+        for field, value in data.items():
+            setattr(model, field, value)
+        model.save(update_fields=[*data.keys()])
+        return self._to_domain(model)
 
-    def find_aulas_por_bloque(self, horario_bloque: HorarioBloque) -> List[Aula]:
-        """Implementación de IAulaRepository.find_aulas_por_bloque."""
-        # Consulta compleja que utiliza filtros transaccionales en el ORM
-        try:
-            # Lógica real usando django.db.transaction y select_related
-            pass
-        except Exception as e:
-            print(f"Error de DB al buscar aulas disponibles: {e}")
-            return []
+    def delete(self, entity_id: int) -> None:
+        AsignacionModel.objects.filter(id=entity_id).delete()
 
-    @abstractmethod
-    def crear_asignacion_transaccional(self, grupo_id: int, aula_id: int, bloque_horario: HorarioBloque) -> bool:
-        """Método transaccional para garantizar la integridad de datos."""
-        # Esta función debe envolver lógica ORM con @transaction.atomic en el modelo AsignacionModel
+    def existe_conflicto(
+        self,
+        aula_id: str,
+        bloque_horario_id: str,
+        semestre: str,
+    ) -> bool:
+        return AsignacionModel.objects.filter(
+            aula_id=aula_id,
+            bloque_horario_id=bloque_horario_id,
+            semestre=semestre,
+            estado="CONFIRMADO",
+        ).exists()
 
-        # ... Lógica transaccional a implementar ...
-        pass
+    def guardar(self, asignacion: Asignacion) -> Asignacion:
+        model = AsignacionModel.objects.create(
+            grupo_id=asignacion.grupo_id,
+            aula_id=asignacion.aula_id,
+            bloque_horario_id=asignacion.bloque_horario_id,
+            semestre=asignacion.semestre,
+            estado=asignacion.estado,
+        )
+        return self._to_domain(model)
+
+    def listar_por_semestre(self, semestre: str) -> Iterable[Asignacion]:
+        return self.list(semestre=semestre)
+
+    @staticmethod
+    def _to_domain(model: AsignacionModel) -> Asignacion:
+        return Asignacion(
+            id=model.id,
+            grupo_id=model.grupo_id,
+            aula_id=model.aula_id,
+            bloque_horario_id=model.bloque_horario_id,
+            semestre=model.semestre,
+            estado=model.estado,
+        )

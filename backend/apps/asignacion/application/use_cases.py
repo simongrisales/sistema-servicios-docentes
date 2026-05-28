@@ -1,54 +1,74 @@
-from typing import List, Optional
-from ..domain.interfaces import IAsignacionStrategy, IRepository, IGrupoRepository, IAulaRepository
-from ..application.dtos import AsignacionInputDTO, SimulacionInputDTO
-from ..domain.exceptions import (
-    AsignacionConflictoError, SinAulasDisponiblesError, CapacidadInsuficienteError, DatosIncompletosError
+from ..domain.entities import Asignacion, ResultadoAsignacion
+from ..domain.exceptions import AsignacionConflictoError
+from ..domain.interfaces import IAsignacionRepository, IAsignacionStrategy
+from .dtos import (
+    AsignacionInputDTO,
+    AsignacionOutputDTO,
+    CoberturaOutputDTO,
+    SimulacionInputDTO,
+    SimulacionOutputDTO,
 )
 
+
 class AsignacionUseCaseService:
-    """Orquesta la lógica de asignación automatica y simulación."""
-    def __init__(self, grupo_repo: IGrupoRepository, aula_repo: IAulaRepository):
-        # Inyección de dependencias (Interfaces)
-        self.grupo_repo = grupo_repo
-        self.aula_repo = aula_repo
+    """Orquesta asignacion automatica, simulacion y cobertura."""
 
-    def ejecutar_asignacion_automatica(self, input_dto: AsignacionInputDTO, estrategia: IAsignacionStrategy) -> str:
-        """
-        Intenta asignar el recurso físico más adecuado utilizando la estrategia de negocio.
-        Esta función debe ser transaccional a nivel de base de datos (usando @transaction.atomic).
-        """
-        # 1. Obtener entidades necesarias del dominio (Usamos los repositorios para esto)
-        grupo = self.grupo_repo.get_grupo(input_dto.grupo_id)
-        if not grupo:
-            raise DatosIncompletosError("Grupo no encontrado.")
+    def __init__(
+        self,
+        asignacion_repo: IAsignacionRepository | None = None,
+        strategy: IAsignacionStrategy | None = None,
+    ) -> None:
+        self.asignacion_repo = asignacion_repo
+        self.strategy = strategy
 
-        try:
-            # 2. Usar el patrón Strategy para encontrar la mejor aula y validar
-            aula_candidata = estrategia.seleccionar_mejor_aula(grupo, input_dto.bloque_horario)
-        except CapacidadInsuficienteError as e:
-            raise e
-        except SinAulasDisponiblesError as e:
-            # Esto captura el error del repositorio o de la estrategia si no encuentra nada
-            raise e
+    def ejecutar_asignacion_automatica(
+        self, input_dto: AsignacionInputDTO
+    ) -> AsignacionOutputDTO:
+        if self.asignacion_repo and self.asignacion_repo.existe_conflicto(
+            input_dto.aula_id,
+            input_dto.bloque_horario_id,
+            input_dto.semestre,
+        ):
+            raise AsignacionConflictoError(["El aula ya esta ocupada en ese bloque."])
 
-        # 3. Ejecutar la asignación transaccional (Se llamaría a un método en infraestructura/repositories)
-        print("--- Iniciando transacción ORM ---")
-        # Aquí se debe llamar al método transaccional en el repositorio concreto (ej: self.repo.asignar_aula(grupo, aula_candidata, ...))
+        asignacion = Asignacion(
+            id=0,
+            grupo_id=int(input_dto.grupo_id),
+            aula_id=int(input_dto.aula_id),
+            bloque_horario_id=int(input_dto.bloque_horario_id),
+            semestre=input_dto.semestre,
+            estado="CONFIRMADO",
+        )
+        if self.asignacion_repo:
+            asignacion = self.asignacion_repo.guardar(asignacion)
+        return AsignacionOutputDTO(
+            grupo_id=str(asignacion.grupo_id),
+            aula_id=str(asignacion.aula_id),
+            bloque_horario_id=str(asignacion.bloque_horario_id),
+            semestre=asignacion.semestre,
+            estado=asignacion.estado,
+        )
 
-        return f"Asignación exitosa. Aula asignada: {aula_candidata.id}"
+    def simular_asignacion(self, input_dto: SimulacionInputDTO) -> SimulacionOutputDTO:
+        if self.strategy is None:
+            return SimulacionOutputDTO(
+                exitoso=True,
+                mensaje="Simulacion preparada sin persistir datos.",
+            )
+        resultado: ResultadoAsignacion = self.strategy.asignar(
+            input_dto.grupos,
+            input_dto.aulas,
+            [],
+        )
+        return SimulacionOutputDTO(
+            exitoso=resultado.exitoso,
+            mensaje=resultado.mensaje,
+            conflictos=resultado.conflicto_detalles,
+        )
+
+    def verificar_cobertura_total(self) -> CoberturaOutputDTO:
+        return CoberturaOutputDTO(total_grupos=0, grupos_con_aula=0)
 
 
-    def simular_asignacion(self, input_dto: SimulacionInputDTO) -> str:
-        """Simula la asignación para mostrar un resultado sin modificar el estado real."""
-        # Simulación de lógica de validaciones y scoring usando solo los repositorios abstractos
-        print("Ejecutando simulación en modo lectura.")
-
-        # Lógica compleja que llamará a IAulaRepository.find_aulas_por_bloque()
-        return "Simulación exitosa: Se identificaron 3 aulas posibles, la mejor por prioridad es Aula ID 15."
-
-
-    def verificar_cobertura_total(self) -> 'CoberturaOutputDTO':
-        """Verifica si el número de grupos asignados cubre todos los grupos activos."""
-        # Lógica que iteraría sobre todos los grupos y compararía con las asignaciones confirmadas.
-        print("Validando cobertura total de la programación académica...")
-        return CoberturaOutputDTO(grupos_con_aula=150, total_grupos=152)
+EjecutarAsignacionAutomatica = AsignacionUseCaseService
+SimularAsignacion = AsignacionUseCaseService

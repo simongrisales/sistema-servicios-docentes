@@ -1,109 +1,109 @@
-# backend/apps/notificaciones/infrastructure/repositories.py
+from collections.abc import Iterable
+from typing import Any
 
-from typing import List, Optional
-from sistemaserviciosdocentes.backend.apps.notificaciones.domain.interfaces import INotificacionRepository
-from sistemaserviciosdocentes.backend.apps.notificaciones.domain.entities import Notificacion
-from systemserviciosdocentes.backend.apps.notificaciones.infrastructure.models import NotificacionModel # Importar el modelo ORM
-# Asumiendo que existe una función para obtener un usuario activo o por ID en la capa de infraestructura/usuarios
+from django.db import transaction
+from django.utils import timezone
 
-class NotificacionRepository(INotificacionRepository):
-    """Implementación concreta del repositorio de notificaciones usando Django ORM."""
+from core.repositories import BaseRepository
 
-    def get_by_id(self, notificacion_id: str) -> Optional[Notificacion]:
-        try:
-            model_instance = NotificacionModel.objects.get(UUID_NOTIFICACION=notificacion_id)
-            return Notificacion(
-                notificacion_id=str(model_instance.uuid_notificacion),
-                tipo=model_instance.TIPO,
-                titulo=model_instance.TITULO,
-                mensaje=model_instance.MENSAJE,
-                fecha_creacion=model_instance.fecha_creacion,
-                usuario_destino_id=str(model_instance.usuario_destino_id.pk) if model_instance.usuario_destino_id else None
+from ..domain.entities import Notificacion
+from ..domain.interfaces import INotificacionRepository
+from .models import NotificacionModel
+
+
+class NotificacionRepository(
+    BaseRepository[Notificacion, str], INotificacionRepository
+):
+    """Repositorio concreto de notificaciones usando Django ORM."""
+
+    def get(self, entity_id: str) -> Notificacion | None:
+        return self.get_by_id(entity_id)
+
+    def list(self, **filters: Any) -> Iterable[Notificacion]:
+        queryset = NotificacionModel.objects.filter(**filters)
+        return [self._to_domain(instance) for instance in queryset]
+
+    def create(self, data: dict[str, Any]) -> Notificacion:
+        model = NotificacionModel.objects.create(**data)
+        return self._to_domain(model)
+
+    def update(self, entity_id: str, data: dict[str, Any]) -> Notificacion:
+        model = NotificacionModel.objects.get(notificacion_id=entity_id)
+        for field, value in data.items():
+            setattr(model, field, value)
+        model.save(update_fields=[*data.keys()])
+        return self._to_domain(model)
+
+    def delete(self, entity_id: str) -> None:
+        NotificacionModel.objects.filter(notificacion_id=entity_id).update(activo=False)
+
+    def get_by_id(self, notificacion_id: str) -> Notificacion | None:
+        model = (
+            NotificacionModel.objects.filter(
+                notificacion_id=notificacion_id,
+                activo=True,
             )
-        except NotificacionModel.DoesNotExist:
-            return None
-
-    def create_notification(self, notification: Notificacion):
-        """Guarda una nueva notificación en la base de datos."""
-        # Mapear la entidad de dominio a los campos del modelo ORM
-        NotificacionModel.objects.create(
-            UUID_NOTIFICACION=notification.notificacion_id,
-            TIPO=notification.tipo,
-            TITULO=notification.titulo,
-            MENSAJE=notification.mensaje,
-            USUARIO_DESTINO=notification.usuario_destino_id, # Asumiendo que esto se resuelve a FK de usuario
+            .select_related("usuario_destino")
+            .first()
         )
+        if model is None:
+            return None
+        return self._to_domain(model)
 
-    async def mark_as_read(self, notificacion_id: str, user_id: str) -> bool:
-        """Marca la notificación como leída y verifica que pertenece al usuario."""
-        # NOTA: En un entorno real, esto debe ejecutarse en una transacción de DB.
-        from django.db import transaction
+    def create_notification(self, notification: Notificacion) -> Notificacion:
+        model = NotificacionModel.objects.create(
+            notificacion_id=notification.notificacion_id,
+            tipo=notification.tipo,
+            titulo=notification.titulo,
+            mensaje=notification.mensaje,
+            usuario_destino_id=notification.usuario_destino_id,
+            lectura_requerida=notification.lectura_requerida,
+            es_leida=notification.es_leida,
+        )
+        return self._to_domain(model)
 
-        try:
-            with transaction.atomic():
-                instance = NotificacionModel.objects.get(UUID_NOTIFICACION=notificacion_id)
-                if instance.USUARIO_DESTINO and str(instance.USUARIO_DESTINO.pk) == user_id:
-                    instance.es_leida = True
-                    instance.save()
-                    return True
-                return False # Notificación no encontrada o no pertenece al usuario
-        except NotificacionModel.DoesNotExist:
-            return False
+    def mark_as_read(self, notificacion_id: str, user_id: str) -> bool:
+        with transaction.atomic():
+            updated = NotificacionModel.objects.filter(
+                notificacion_id=notificacion_id,
+                usuario_destino_id=user_id,
+                activo=True,
+                es_leida=False,
+            ).update(es_leida=True, fecha_lectura=timezone.now())
+        return updated == 1
 
-    async def get_unread_notifications_for_user(self, user_id: str) -> List[Notificacion]:
-        """Recupera todas las notificaciones no leídas para el usuario."""
-        # NOTA: Se asume que la consulta de ORM se ejecuta en un contexto async (ej. @select_related o similar).
-        from django.db import transaction
+    def get_unread_notifications_for_user(self, user_id: str) -> Iterable[Notificacion]:
+        queryset = (
+            NotificacionModel.objects.filter(
+                usuario_destino_id=user_id,
+                es_leida=False,
+                activo=True,
+            )
+            .select_related("usuario_destino")
+            .order_by("-fecha_creacion")[:20]
+        )
+        return [self._to_domain(instance) for instance in queryset]
 
-        try:
-            with transaction.atomic():
-                instances = NotificacionModel.objects.filter(
-                    usuario_destino__pk=user_id,
-                    es_leida=False,
-                    estado_activo=True
-                ).order_by('-fecha_creacion')[:20] # Límite de paginación
+    def list_all_notifications_for_user(self, user_id: str) -> Iterable[Notificacion]:
+        queryset = (
+            NotificacionModel.objects.filter(
+                usuario_destino_id=user_id,
+                activo=True,
+            )
+            .select_related("usuario_destino")
+            .order_by("-fecha_creacion")
+        )
+        return [self._to_domain(instance) for instance in queryset]
 
-                notifications = []
-                for instance in instances:
-                    # Mapeo del ORM a la entidad de Dominio
-                    notifications.append(Notificacion(
-                        notificacion_id=str(instance.uuid_notificacion),
-                        tipo=instance.TIPO,
-                        titulo=instance.TITULO,
-                        mensaje=instance.MENSAJE,
-                        fecha_creacion=instance.fecha_creacion,
-                        usuario_destino_id=str(instance.usuario_destino.pk) if instance.usuario_destino else None
-                    ))
-                return notifications
-
-        except Exception as e:
-            # Loggear el error de base de datos en producción
-            print(f"Error al obtener notificaciones no leídas: {e}")
-            return []
-
-    async def list_all_notifications_for_user(self, user_id: str) -> List[Notificacion]:
-        """Lista el historial completo de notificaciones para un usuario."""
-        from django.db import transaction
-        try:
-            with transaction.atomic():
-                instances = NotificacionModel.objects.filter(
-                    usuario_destino__pk=user_id,
-                    estado_activo=True
-                ).order_by('-fecha_creacion')
-
-                notifications = []
-                for instance in instances:
-                    # Mapeo del ORM a la entidad de Dominio
-                    notifications.append(Notificacion(
-                        notificacion_id=str(instance.uuid_notificacion),
-                        tipo=instance.TIPO,
-                        titulo=instance.TITULO,
-                        mensaje=instance.MENSAJE,
-                        fecha_creacion=instance.fecha_creacion,
-                        usuario_destino_id=str(instance.usuario_destino.pk) if instance.usuario_destino else None
-                    ))
-                return notifications
-
-        except Exception as e:
-            print(f"Error al listar notificaciones: {e}")
-            return []
+    @staticmethod
+    def _to_domain(model: NotificacionModel) -> Notificacion:
+        return Notificacion(
+            notificacion_id=model.notificacion_id,
+            tipo=model.tipo,
+            titulo=model.titulo,
+            mensaje=model.mensaje,
+            fecha_creacion=model.fecha_creacion,
+            usuario_destino_id=str(model.usuario_destino_id),
+            lectura_requerida=model.lectura_requerida,
+            es_leida=model.es_leida,
+        )

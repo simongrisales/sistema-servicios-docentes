@@ -1,27 +1,33 @@
 from rest_framework import serializers
-from asignacion.application.dtos import AsignacionOutputDTO, SimulacionOutputDTO
+
 
 class SerializacionAsignacion(serializers.Serializer):
-    # Campos para la solicitud de ejecución (POST /ejecutar)
-    grupo_id = serializers.IntegerField()
-    semestre = serializers.CharField()
-    fecha_inicio = serializers.DateField()
-    fecha_fin = serializers.DateField()
+    grupo_id = serializers.CharField()
+    aula_id = serializers.CharField()
+    bloque_horario_id = serializers.CharField()
+    semestre = serializers.CharField(max_length=20)
+
 
 class SerializacionSimulacion(serializers.Serializer):
-    # Campos para la solicitud de simulación (POST /simular)
-    grupo_id = serializers.IntegerField()
-    semestre = serializers.CharField()
-    fecha_inicio = serializers.DateField()
-    fecha_fin = serializers.DateField()
+    semestre = serializers.CharField(max_length=20)
+    grupos = serializers.ListField(child=serializers.DictField(), required=False)
+    aulas = serializers.ListField(child=serializers.DictField(), required=False)
+
 
 class SerializacionResultadoAsignacion(serializers.Serializer):
-    # Campos para devolver el resultado de la asignación o simulación
-    asignaciones_exitosas = serializers.ListField(child=serializers.DictField(), required=False)
-    conflictos_encontrados = serializers.ListField(child=serializers.CharField())
-    estado_generacion = serializers.CharField()
+    grupo_id = serializers.CharField(required=False)
+    aula_id = serializers.CharField(required=False)
+    bloque_horario_id = serializers.CharField(required=False)
+    semestre = serializers.CharField(required=False)
+    estado = serializers.CharField(required=False)
+    exitoso = serializers.BooleanField(required=False)
+    mensaje = serializers.CharField(required=False)
+    conflictos = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+    )
+
 
 class SerializacionCoberturaOutput(serializers.Serializer):
-    # Para el endpoint de verificación de cobertura total
-    grupos_sin_aula = serializers.ListField(child=serializers.IntegerField(), required=False)
-    grupo_ids_en_cobertura = serializers.ListField(child=serializers.IntegerField())
+    total_grupos = serializers.IntegerField()
+    grupos_con_aula = serializers.IntegerField()

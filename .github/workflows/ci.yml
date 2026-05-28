@@ -2,10 +2,6 @@ name: CI Pipeline for Sistema de Servicios Docentes
 
 on:
   push:
-    branches:
-      - develop
-      - main
-      - feature/*
   pull_request:
     branches:
       - develop
@@ -37,6 +33,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.settings.dev
+      SECRET_KEY: clave-ci
       DJANGO_SECRET_KEY: clave-ci
       POSTGRES_DB: sistema_servicios_docentes
       POSTGRES_USER: servicios_docentes
@@ -47,6 +44,8 @@ jobs:
       VALKEY_PORT: 6379
       CELERY_BROKER_URL: redis://localhost:6379/0
       CELERY_RESULT_BACKEND: redis://localhost:6379/0
+      CHANNEL_LAYERS_URL: redis://localhost:6379/0
+      JWT_SECRET: jwt-ci
 
     steps:
       - name: Descargar repositorio
@@ -67,4 +66,4 @@ jobs:
         run: black --check backend
 
       - name: Ejecutar pruebas con cobertura
-        run: pytest-django --cov=backend --cov-report=term-missing
+        run: pytest backend/ --cov=backend/ --cov-report=term-missing

@@ -1,18 +1,39 @@
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING # Usamos tipe hints para evitar ciclos de importación
+from ..domain.entities import ReglaAsignacion, ResultadoAsignacion
+from ..domain.interfaces import IAsignacionStrategy
 
-if TYPE_CHECKING:
-    # Aseguramos que las entidades de dominio estén disponibles aquí solo en tiempo de chequeo.
-    from ..domain.entities import Grupo, Aula, ReglaAsignacion, HorarioBloque
 
-class IAsignacionStrategy(ABC):
-    """Interfaz concreta para todas las estrategias de asignación."""
-    @abstractmethod
-    def __init__(self, reglas: List['ReglaAsignacion']):
-        """Inicializa la estrategia con el conjunto de reglas de negocio activas."""
-        pass
+class PrioridadEstudiantesStrategy(IAsignacionStrategy):
+    """Asigna primero los grupos con mas estudiantes a aulas suficientes."""
 
-    @abstractmethod
-    def seleccionar_mejor_aula(self, grupo: 'Grupo', horario_bloque: 'HorarioBloque') -> Aula:
-        """Implementa la lógica de scoring para determinar la aula óptima."""
-        pass
+    def asignar(
+        self,
+        grupos: list[dict],
+        aulas: list[dict],
+        reglas: list[ReglaAsignacion],
+    ) -> ResultadoAsignacion:
+        del reglas
+        grupos_ordenados = sorted(
+            grupos,
+            key=lambda grupo: grupo.get("num_estudiantes", 0),
+            reverse=True,
+        )
+        for grupo in grupos_ordenados:
+            estudiantes = grupo.get("num_estudiantes", 0)
+            aula = next(
+                (
+                    candidata
+                    for candidata in aulas
+                    if candidata.get("capacidad", 0) >= estudiantes
+                ),
+                None,
+            )
+            if aula is None:
+                return ResultadoAsignacion(
+                    exitoso=False,
+                    mensaje="No hay aula con capacidad suficiente.",
+                    conflicto_detalles=[str(grupo.get("id"))],
+                )
+        return ResultadoAsignacion(
+            exitoso=True,
+            mensaje="Simulacion de asignacion completada.",
+        )

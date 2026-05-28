@@ -1,15 +1,14 @@
-# backend/apps/notificaciones/domain/exceptions.py
+class NotificacionError(Exception):
+    """Error base controlado del dominio de notificaciones."""
 
-from sistemaserviciosdocentes.backend.apps.core.domain.entities import SistemaError # Usar la excepción base del sistema
 
-class NotificacionConflictoError(SistemaError):
-    """Excepción lanzada cuando se intenta notificar sobre un evento que ya fue procesado o no tiene sentido."""
-    pass
+class NotificacionConflictoError(NotificacionError):
+    """Se lanza cuando una notificacion ya fue procesada o no aplica."""
 
-class UsuarioNoEncontradoError(SistemaError):
-    """Lanzada si el usuario objetivo para la notificación no existe en el sistema."""
-    pass
 
-class TipoNotificacionInvalidoError(SistemaError):
-    """Lanzada si se intenta usar un tipo de notificación desconocido o deshabilitado."""
-    pass
+class UsuarioNoEncontradoError(NotificacionError):
+    """Se lanza cuando no existe el usuario destino."""
+
+
+class TipoNotificacionInvalidoError(NotificacionError):
+    """Se lanza cuando el tipo de notificacion no esta permitido."""

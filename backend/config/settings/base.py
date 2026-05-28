@@ -7,6 +7,7 @@ BACKEND_DIR = BASE_DIR / "backend"
 
 env = environ.Env(
     DEBUG=(bool, False),
+    SECRET_KEY=(str, "clave-insegura-solo-para-desarrollo"),
     DJANGO_SECRET_KEY=(str, "clave-insegura-solo-para-desarrollo"),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     POSTGRES_DB=(str, "sistema_servicios_docentes"),
@@ -16,13 +17,18 @@ env = environ.Env(
     POSTGRES_PORT=(int, 5432),
     VALKEY_HOST=(str, "localhost"),
     VALKEY_PORT=(int, 6379),
+    VALKEY_URL=(str, ""),
+    CHANNEL_LAYERS_URL=(str, ""),
+    JWT_SECRET=(str, "jwt-inseguro-solo-para-desarrollo"),
+    RECAPTCHA_PUBLIC_KEY=(str, ""),
+    RECAPTCHA_PRIVATE_KEY=(str, ""),
 )
 
 env_file = BASE_DIR / ".env"
 if env_file.exists():
     environ.Env.read_env(env_file)
 
-SECRET_KEY = env("DJANGO_SECRET_KEY")
+SECRET_KEY = env("SECRET_KEY") or env("DJANGO_SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
@@ -34,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "rest_framework",
     "drf_spectacular",
     "django_ratelimit",
@@ -91,7 +98,7 @@ DATABASES = {
     }
 }
 
-VALKEY_URL = f"redis://{env('VALKEY_HOST')}:{env('VALKEY_PORT')}/0"
+VALKEY_URL = env("VALKEY_URL") or f"redis://{env('VALKEY_HOST')}:{env('VALKEY_PORT')}/0"
 
 CACHES = {
     "default": {
@@ -104,7 +111,11 @@ CACHES = {
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [(env("VALKEY_HOST"), env("VALKEY_PORT"))]},
+        "CONFIG": {
+            "hosts": [
+                env("CHANNEL_LAYERS_URL") or (env("VALKEY_HOST"), env("VALKEY_PORT"))
+            ]
+        },
     }
 }
 
@@ -112,6 +123,9 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=VALKEY_URL)
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=VALKEY_URL)
 CELERY_TASK_IGNORE_RESULT = False
 CELERY_TIMEZONE = "America/Bogota"
+SIMPLE_JWT = {"SIGNING_KEY": env("JWT_SECRET")}
+RECAPTCHA_PUBLIC_KEY = env("RECAPTCHA_PUBLIC_KEY")
+RECAPTCHA_PRIVATE_KEY = env("RECAPTCHA_PRIVATE_KEY")
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",

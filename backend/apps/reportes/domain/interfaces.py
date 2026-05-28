@@ -1,33 +1,33 @@
-# reportes/domain/interfaces.py
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import Any
+
+from .entities import Reporte
+
 
 class IReporteRepository(ABC):
-    """Interfaz de Repositorio para la gestión del ciclo de vida de los Reportes."""
+    @abstractmethod
+    def get_reporte_by_id(self, reporte_id: int) -> Reporte | None:
+        raise NotImplementedError
 
     @abstractmethod
-    def get_reporte_by_id(self, reporte_id: int) -> Optional['Reporte']:
-        """Obtiene un reporte por su ID."""
-        pass
+    def find_reports_by_criteria(self, criteria: dict[str, Any]) -> list[Reporte]:
+        raise NotImplementedError
 
     @abstractmethod
-    def find_reports_by_criteria(self, criteria: dict) -> List['Reporte']:
-        """Busca reportes basados en criterios (ej. tipo, rango de fechas)."""
-        pass
+    def create_report_request(self, reporte: Reporte) -> int:
+        raise NotImplementedError
 
     @abstractmethod
-    def create_report_request(self, reporte: 'Reporte') -> int:
-        """Crea una solicitud de reporte y devuelve el ID generado."""
-        pass
+    def update_report_status(
+        self,
+        reporte_id: int,
+        status: str,
+        data: dict[str, Any] | None = None,
+    ) -> bool:
+        raise NotImplementedError
 
-    @abstractmethod
-    def update_report_status(self, reporte_id: int, status: str, data: Dict = None) -> bool:
-        """Actualiza el estado del reporte (COMPLETO/FALLIDO) y los datos anexos."""
-        pass
 
 class IReporteGenerador(ABC):
-    """Interfaz para cualquier algoritmo o caso de uso que genere un tipo específico de reporte."""
     @abstractmethod
-    def generate_report(self, **kwargs) -> Dict:
-        """Ejecuta la lógica compleja y devuelve los datos estructurados del reporte."""
-        pass
+    def generate_report(self, **kwargs: Any) -> dict[str, Any]:
+        raise NotImplementedError

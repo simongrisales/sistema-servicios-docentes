@@ -20,3 +20,11 @@ class NumeroEstudiantesInvalidoError(AcademicoDomainError):
 
 class HorarioBloqueInvalidoError(AcademicoDomainError):
     """Se lanza cuando un bloque horario no respeta el orden de horas."""
+
+
+class GrupoSinDocenteError(AcademicoDomainError):
+    """Se lanza cuando un grupo no tiene docente valido."""
+
+
+class AulaNoDisponibleError(AcademicoDomainError):
+    """Se lanza cuando no hay aulas disponibles."""

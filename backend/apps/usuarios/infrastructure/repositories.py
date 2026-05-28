@@ -1,48 +1,76 @@
-from typing import Optional, List
+from collections.abc import Iterable
+from typing import Any
+
 from django.contrib.auth import get_user_model
+
+from core.repositories import BaseRepository
+
+from ..domain.entities import Role, User
 from ..domain.interfaces import IUsuarioRepository
-from ..domain.entities import User, Role
-# Importar modelos ORM (debe apuntar al modelo UsuarioModel que extendió AbstractUser)
-# from .models import UsuarioModel, RoleModel # Esto sería necesario en la implementación real
+from .models import RoleModel
 
-class UsuariosRepository(IUsuarioRepository):
-    """Implementación concreta del repositorio de usuarios utilizando el ORM de Django."""
 
-    def get_by_username(self, username: str) -> Optional[User]:
-        try:
-            # Utiliza la lógica nativa de Django para buscar usuarios.
-            return get_user_model().objects.get(username=username)
-        except get_user_model().DoesNotExist:
-            return None
+class UsuariosRepository(BaseRepository[User, int], IUsuarioRepository):
+    def get(self, entity_id: int) -> User | None:
+        return self.find_by_id(entity_id)
 
-    def get_by_email(self, email: str) -> Optional[User]:
-        try:
-            return get_user_model().objects.get(email=email)
-        except get_user_model().DoesNotExist:
-            return None
+    def list(self, **filters: Any) -> Iterable[User]:
+        return [
+            self._to_domain(model)
+            for model in get_user_model().objects.filter(**filters)
+        ]
 
-    def save(self, user: User):
-        """Guarda o actualiza un objeto Usuario."""
-        # Lógica real de persistencia (Ej: usuario.set_password(...) antes de guardar).
-        try:
-            # En la vida real: se debería actualizar el password hash y llamar a .save() en el modelo ORM asociado.
-            user_model = get_user_model().objects.get(pk=user.user_id) # Asumiendo que user_id existe
-            # Lógica para actualizar campos específicos de roles/permisos si es necesario
-        except Exception as e:
-             raise Exception(f"Error al guardar el usuario en la base de datos: {e}")
+    def create(self, data: dict[str, Any]) -> User:
+        password = data.pop("password")
+        model = get_user_model().objects.create_user(password=password, **data)
+        return self._to_domain(model)
 
-    def find_by_id(self, user_id: int) -> Optional[User]:
-        try:
-            return get_user_model().objects.get(pk=user_id)
-        except get_user_model().DoesNotExist:
-            return None
+    def update(self, entity_id: int, data: dict[str, Any]) -> User:
+        model = get_user_model().objects.get(pk=entity_id)
+        for field, value in data.items():
+            setattr(model, field, value)
+        model.save(update_fields=[*data.keys()])
+        return self._to_domain(model)
 
-    def list_all_roles(self) -> List[Role]:
-        """Lista todos los roles disponibles (usando RoleModel)."""
-        # En la implementación real, esto queryearía el modelo RoleModel.
-        return [Role(role_id=1, name="Admin", description="Superusuario")] # Placeholder
+    def delete(self, entity_id: int) -> None:
+        get_user_model().objects.filter(pk=entity_id).update(is_active=False)
 
-    def list_all_permissions(self) -> List[Permission]:
-        """Lista todos los permisos definidos en el sistema (usando PermissionModel)."""
-        # Esto se usaría para verificar si un rol tiene derecho a hacer algo.
-        return []
+    def get_by_username(self, username: str) -> User | None:
+        model = get_user_model().objects.filter(username=username).first()
+        return self._to_domain(model) if model else None
+
+    def get_by_email(self, email: str) -> User | None:
+        model = get_user_model().objects.filter(email=email).first()
+        return self._to_domain(model) if model else None
+
+    def save(self, user: User) -> None:
+        self.update(
+            user.user_id,
+            {
+                "username": user.username,
+                "email": user.email,
+                "is_active": user.is_active,
+            },
+        )
+
+    def find_by_id(self, user_id: int) -> User | None:
+        model = get_user_model().objects.filter(pk=user_id).first()
+        return self._to_domain(model) if model else None
+
+    def list_all_roles(self) -> list[Role]:
+        return [
+            Role(role_id=model.id, name=model.name, description=model.description)
+            for model in RoleModel.objects.all()
+        ]
+
+    @staticmethod
+    def _to_domain(model) -> User:
+        role = Role(role_id=0, name="usuario", description="Usuario autenticado")
+        return User(
+            user_id=model.pk,
+            username=model.username,
+            email=model.email,
+            password="",
+            role=role,
+            is_active=model.is_active,
+        )

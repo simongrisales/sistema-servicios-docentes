@@ -1,88 +1,128 @@
-from django.db import transaction, IntegrityError
-# Importaciones del Dominio (para mapear los datos)
-from ..domain.entities import Aula, Grupo, Docente, Curso, HorarioBloque
-# Importaciones de Infraestructura y BaseRepository
-from .models import * # Importa todos los modelos definidos en models.py
+from collections.abc import Iterable
+from typing import Any
+from uuid import UUID
+
 from core.repositories import BaseRepository
 
-class AcademicoRepository(BaseRepository):
-    """Clase base que agrupa la lógica de repositorio para el módulo académico."""
-
-    # --- Aulas y Recursos Físicos ---
-    def find_available_aulas(self, horario_bloque: HorarioBloque) -> List[Aula]:
-        """Busca aulas disponibles en un bloque horario específico."""
-        try:
-            # Query a AulaModel buscando aquellas que no tienen ninguna asignación/reserva en el mismo slot.
-            count_conflicto = AulaModel.objects.filter(
-                bloque_horario=horario_bloque
-            ).exclude(
-                asignaciones__estado='CONFIRMADO'
-            ).count()
-
-            # Simplificación: solo devolvemos aulas con asignación cero en este bloque horario
-            aulas_disponibles = AulaModel.objects.filter(id__in=self.get_all_aula_ids()).exclude(
-                asignaciones__bloque_horario=horario_bloque,
-                asignaciones__estado='CONFIRMADO'
-            )
-
-            # Mapeo de ORM a Entidad de Dominio
-            return [Aula(
-                id=a.id,
-                nombre=a.nombre,
-                capacidad=a.capacidad,
-                tipo=a.tipo,
-                disponible=(len(aulas_disponibles) > 0), # Simplificado: asumir disponible si no hay conflicto visible
-                restricciones=list(a.restricciones) if a.restricciones else []
-            ) for a in aulas_disponibles]
-
-        except Exception as e:
-             print(f"Error al buscar disponibilidad de aulas: {e}")
-             return []
+from ..domain.entities import Aula, Docente, Grupo, TipoAula
+from ..domain.interfaces import IAulaRepository, IDocenteRepository, IGrupoRepository
+from .models import AulaModel, DocenteModel, GrupoModel
 
 
-    # --- Grupos y Curso ---
-    def get_grupos_por_curso(self, curso_id: int) -> List[Grupo]:
-        """Obtiene todos los grupos asociados a un curso dado."""
-        try:
-            groups = GrupoModel.objects.filter(curso=curso_id).select_related('docente')
-            return [Grupo(
-                id=g.id,
-                curso_id=g.curso.id,
-                docente_id=g.docente.usuario_id,
-                num_estudiantes=g.num_estudiantes,
-                semestre=g.semestre
-            ) for g in groups]
-        except Exception as e:
-             print(f"Error al obtener grupos por curso {curso_id}: {e}")
-             return []
+class AulaRepository(BaseRepository[Aula, UUID], IAulaRepository):
+    def get(self, entity_id: UUID) -> Aula | None:
+        model = AulaModel.objects.filter(id=entity_id).first()
+        return self._to_domain(model) if model else None
 
-    # Métodos auxiliares (simulación de la complejidad real):
-    def get_all_aula_ids(self) -> list[int]:
-        """Simula obtención de todos los IDs de aula existentes."""
-        try:
-            return list(AulaModel.objects.values_list('id', flat=True'))
-        except Exception as e:
-             print(f"Error al obtener IDs de aulas: {e}")
-             return []
+    def list(self, **filters: Any) -> Iterable[Aula]:
+        return [self._to_domain(model) for model in AulaModel.objects.filter(**filters)]
 
-    # --- Transacciones críticas (Ejemplo) ---
-    @transaction.atomic
-    def asignar_aula_transaccion(self, grupo_id: int, aula_id: int, bloque_horario: HorarioBloque):
-        """Intenta asegurar la asignación de aula y prevenir conflictos."""
-        try:
-            # 1. Verificar si el aula ya está comprometida en ese horario por otro proceso/grupo (Integridad)
-            if AulaModel.objects.filter(id=aula_id).exclude(restricciones__contains='DISPONIBLE').exists():
-                raise Exception("Aula ya comprometida con restricciones.")
+    def create(self, data: dict[str, Any]) -> Aula:
+        return self._to_domain(AulaModel.objects.create(**data))
 
-            # 2. Crear la asignación
-            AsignacionModel.objects.create(
-                grupo_id=grupo_id,
-                aula_id=aula_id,
-                bloque_horario=bloque_horario,
-                semestre='2026-S1' # Usar semestre actual
-            )
-            # 3. Actualizar disponibilidad del aula (Lógica de negocio)
-            AulaModel.objects.filter(id=aula_id).update(disponible=False)
+    def update(self, entity_id: UUID, data: dict[str, Any]) -> Aula:
+        model = AulaModel.objects.get(id=entity_id)
+        for field, value in data.items():
+            setattr(model, field, value)
+        model.save(update_fields=[*data.keys()])
+        return self._to_domain(model)
 
-        except IntegrityError as e:
-            raise Exception(f"Conflicto de base de datos durante la asignación: {e}")
+    def delete(self, entity_id: UUID) -> None:
+        AulaModel.objects.filter(id=entity_id).update(activa=False)
+
+    def list_disponibles(self) -> Iterable[Aula]:
+        return self.list(disponible=True, activa=True)
+
+    def list_con_capacidad_minima(self, capacidad_minima: int) -> Iterable[Aula]:
+        return self.list(capacidad__gte=capacidad_minima, activa=True)
+
+    @staticmethod
+    def _to_domain(model: AulaModel) -> Aula:
+        return Aula(
+            id=model.id,
+            nombre=model.nombre,
+            capacidad=model.capacidad,
+            tipo=TipoAula(model.tipo),
+            disponible=model.disponible,
+            activa=model.activa,
+        )
+
+
+class DocenteRepository(BaseRepository[Docente, UUID], IDocenteRepository):
+    def get(self, entity_id: UUID) -> Docente | None:
+        model = DocenteModel.objects.filter(id=entity_id, activo=True).first()
+        return self._to_domain(model) if model else None
+
+    def list(self, **filters: Any) -> Iterable[Docente]:
+        return [
+            self._to_domain(model) for model in DocenteModel.objects.filter(**filters)
+        ]
+
+    def create(self, data: dict[str, Any]) -> Docente:
+        return self._to_domain(DocenteModel.objects.create(**data))
+
+    def update(self, entity_id: UUID, data: dict[str, Any]) -> Docente:
+        model = DocenteModel.objects.get(id=entity_id)
+        for field, value in data.items():
+            setattr(model, field, value)
+        model.save(update_fields=[*data.keys()])
+        return self._to_domain(model)
+
+    def delete(self, entity_id: UUID) -> None:
+        DocenteModel.objects.filter(id=entity_id).update(activo=False)
+
+    def get_por_email(self, email: str) -> Docente | None:
+        model = DocenteModel.objects.filter(email=email, activo=True).first()
+        return self._to_domain(model) if model else None
+
+    @staticmethod
+    def _to_domain(model: DocenteModel) -> Docente:
+        return Docente(
+            id=model.id,
+            nombre=model.nombre,
+            email=model.email,
+            disponibilidad=model.disponibilidad,
+            activo=model.activo,
+        )
+
+
+class GrupoRepository(BaseRepository[Grupo, UUID], IGrupoRepository):
+    def get(self, entity_id: UUID) -> Grupo | None:
+        model = GrupoModel.objects.filter(id=entity_id, activo=True).first()
+        return self._to_domain(model) if model else None
+
+    def list(self, **filters: Any) -> Iterable[Grupo]:
+        return [
+            self._to_domain(model) for model in GrupoModel.objects.filter(**filters)
+        ]
+
+    def create(self, data: dict[str, Any]) -> Grupo:
+        return self._to_domain(GrupoModel.objects.create(**data))
+
+    def update(self, entity_id: UUID, data: dict[str, Any]) -> Grupo:
+        model = GrupoModel.objects.get(id=entity_id)
+        for field, value in data.items():
+            setattr(model, field, value)
+        model.save(update_fields=[*data.keys()])
+        return self._to_domain(model)
+
+    def delete(self, entity_id: UUID) -> None:
+        GrupoModel.objects.filter(id=entity_id).update(activo=False)
+
+    def list_por_semestre(self, semestre: str) -> Iterable[Grupo]:
+        return self.list(semestre=semestre, activo=True)
+
+    def list_por_curso(self, curso_id: UUID) -> Iterable[Grupo]:
+        return self.list(curso_id=curso_id, activo=True)
+
+    @staticmethod
+    def _to_domain(model: GrupoModel) -> Grupo:
+        return Grupo(
+            id=model.id,
+            curso_id=model.curso_id,
+            docente_id=model.docente_id,
+            codigo=model.codigo,
+            num_estudiantes=model.num_estudiantes,
+            semestre=model.semestre,
+            activo=model.activo,
+        )

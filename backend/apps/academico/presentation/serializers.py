@@ -1,37 +1,24 @@
 from rest_framework import serializers
-from ..domain.entities import Aula, Grupo # Importaciones de Entidades para serialización
 
-# --- Serializers de Aulas y Recursos Físicos ---
 
-class AulaSerializer(serializers.ModelSerializer):
-    """Serializador para exponer el estado completo de un aula."""
-    class Meta:
-        model = 'apps.academico.infrastructure.models.AulaModel' # Referencia al modelo ORM
-        fields = ['id', 'nombre', 'capacidad', 'tipo', 'disponible', 'restricciones']
+class AulaInputSerializer(serializers.Serializer):
+    nombre = serializers.CharField(max_length=255)
+    capacidad = serializers.IntegerField(min_value=1)
+    tipo = serializers.CharField(max_length=100)
+    disponible = serializers.BooleanField(default=True)
+
 
 class AulaOutputSerializer(serializers.Serializer):
-    """Serializador para los resultados de búsqueda (ej: disponibles)."""
-    aula_id = serializers.IntegerField()
+    id = serializers.UUIDField(allow_null=True)
     nombre = serializers.CharField()
     capacidad = serializers.IntegerField()
     tipo = serializers.CharField()
     disponible = serializers.BooleanField()
 
-# --- Serializers de Grupos y Academia ---
 
-class GrupoSerializer(serializers.ModelSerializer):
-    """Serializador para la gestión de grupos."""
-    curso_nombre = serializers.CharField(source='curso.nombre', read_only=True)
-    docente_nombre = serializers.CharField(source='docente.nombre', read_only=True)
-
-    class Meta:
-        model = 'apps.academico.infrastructure.models.GrupoModel' # Referencia al modelo ORM
-        fields = ['id', 'curso', 'docente', 'num_estudiantes', 'semestre',
-                  'curso_nombre', 'docente_nombre']
-
-# Serializadores de Reglas y Catálogos (Para la gestión de reglas)
-class ReglaSerializer(serializers.ModelSerializer):
-    """Serializador para las reglas de negocio."""
-    class Meta:
-        model = 'apps.academico.infrastructure.models.ReglaNegocioModel'
-        fields = '__all__'
+class GrupoSerializer(serializers.Serializer):
+    curso_id = serializers.UUIDField()
+    docente_id = serializers.UUIDField()
+    codigo = serializers.CharField(max_length=50)
+    num_estudiantes = serializers.IntegerField(min_value=0)
+    semestre = serializers.CharField(max_length=20)

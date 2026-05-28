@@ -30,7 +30,8 @@ services:
       CELERY_BROKER_URL: redis://valkey:6379/0
       CELERY_RESULT_BACKEND: redis://valkey:6379/0
     env_file:
-      - .env
+      - path: .env
+        required: false
     ports:
       - "8000:8000"
     volumes:
@@ -51,7 +52,8 @@ services:
       CELERY_BROKER_URL: redis://valkey:6379/0
       CELERY_RESULT_BACKEND: redis://valkey:6379/0
     env_file:
-      - .env
+      - path: .env
+        required: false
     ports:
       - "8001:8001"
     volumes:
@@ -72,7 +74,8 @@ services:
       CELERY_BROKER_URL: redis://valkey:6379/0
       CELERY_RESULT_BACKEND: redis://valkey:6379/0
     env_file:
-      - .env
+      - path: .env
+        required: false
     volumes:
       - .:/app
     depends_on:
