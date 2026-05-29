@@ -32,7 +32,10 @@ class AsignacionUseCaseService:
                 input_dto.bloque_horario_id,
                 input_dto.semestre,
             ):
-                raise AsignacionConflictoError(["El aula ya esta ocupada en ese bloque."])
+                raise AsignacionConflictoError(
+                    ["El aula ya esta ocupada en ese bloque."]
+                )
+
 
             self._validar_capacidad(input_dto)
 

@@ -56,7 +56,9 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
                 tipo_requerido
             )
             if aula is None:
-                # Si no encontramos con el tipo requerido, intentamos buscar sin la restricción de tipo como fallback
+                # Si no encontramos con el tipo requerido, intentamos buscar sin la
+                # restricción de tipo como fallback
+
                 if tipo_requerido:
                     aula = self._buscar_aula(
                         aulas_ordenadas,
@@ -67,7 +69,13 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
                     )
                 
                 if aula is None:
-                    conflictos.append(f"Grupo {grupo_id} ({estudiantes} estudiantes) no encontro aula disponible en bloque {bloque_id}.")
+                    conflictos.append(
+                        "Grupo "
+                        f"{grupo_id} ({estudiantes} estudiantes) "
+                        "no encontro aula disponible en bloque "
+                        f"{bloque_id}."
+                    )
+
                     continue
 
             aula_id = str(aula.get("id") or aula.get("aula_id"))
@@ -85,7 +93,11 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
         if conflictos:
             return ResultadoAsignacion(
                 exitoso=False,
-                mensaje="No se pudo asignar aula a todos los grupos por conflictos de capacidad o disponibilidad.",
+                mensaje=(
+                    "No se pudo asignar aula a todos los grupos por conflictos de "
+                    "capacidad o disponibilidad."
+                ),
+
                 conflicto_detalles=conflictos,
                 asignaciones=asignaciones,
             )

@@ -3,7 +3,8 @@
 Sin imports de Django — Python puro.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
 from typing import Any
 
 

@@ -6,7 +6,7 @@ CatalogoParametroModel almacena parámetros del sistema con el campo
 
 from django.db import models
 
-from ..domain.entities import GRUPOS_VALIDOS
+
 
 
 class GrupoParametro(models.TextChoices):

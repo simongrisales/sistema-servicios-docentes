@@ -1,6 +1,7 @@
 """DTOs de la capa de aplicación de parámetros."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
 from typing import Any
 
 
