@@ -30,6 +30,22 @@ class AcademicoService:
             raise CapacidadAulaInvalidaError(
                 "La capacidad del aula debe ser mayor que cero."
             )
+        if self.aula_repo is not None:
+            aula = self.aula_repo.create(
+                {
+                    "nombre": dto.nombre,
+                    "capacidad": dto.capacidad,
+                    "tipo": dto.tipo,
+                    "disponible": dto.disponible,
+                }
+            )
+            return AulaOutputDTO(
+                id=aula.id,
+                nombre=aula.nombre,
+                capacidad=aula.capacidad,
+                tipo=str(aula.tipo),
+                disponible=aula.disponible,
+            )
         return AulaOutputDTO(
             id=None,
             nombre=dto.nombre,
@@ -58,6 +74,24 @@ class AcademicoService:
             and self.docente_repo.get(dto.docente_id) is None
         ):
             raise GrupoSinDocenteError("El grupo debe tener un docente valido.")
+        if self.grupo_repo is not None:
+            grupo = self.grupo_repo.create(
+                {
+                    "curso_id": dto.curso_id,
+                    "docente_id": dto.docente_id,
+                    "codigo": dto.codigo,
+                    "num_estudiantes": dto.num_estudiantes,
+                    "semestre": dto.semestre,
+                }
+            )
+            return GrupoOutputDTO(
+                id=grupo.id,
+                curso_id=grupo.curso_id,
+                docente_id=grupo.docente_id,
+                codigo=grupo.codigo,
+                num_estudiantes=grupo.num_estudiantes,
+                semestre=grupo.semestre,
+            )
         return GrupoOutputDTO(
             id=None,
             curso_id=dto.curso_id,

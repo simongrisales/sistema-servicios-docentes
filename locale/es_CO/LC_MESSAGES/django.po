@@ -1,0 +1,22 @@
+# Spanish (Colombia) translations for Sistema de Servicios Docentes
+# NOTE: Base strings are minimal; expand as templates use {% trans %}.
+
+msgid ""
+msgstr ""
+"Language: es_CO\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Base system
+msgid "Acceder"
+msgstr "Acceder"
+
+msgid "Login"
+msgstr "Ingreso"
+
+msgid "Usuario"
+msgstr "Usuario"
+
+msgid "Contrasena"
+msgstr "Contraseña"
+

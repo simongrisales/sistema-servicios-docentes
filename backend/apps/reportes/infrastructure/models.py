@@ -1,4 +1,4 @@
-# backend/apps/reportes/infrastructure/models.py
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -48,7 +48,7 @@ class ReporteModel(models.Model):
         max_length=10, choices=REPORTADO_CHOICES, default="PENDIENTE"
     )
     usuario_solicitante = models.ForeignKey(
-        "auth.User",
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name="reportes_solicitados",

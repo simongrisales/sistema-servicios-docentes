@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from typing import Any
 
@@ -21,7 +23,10 @@ class UsuariosRepository(BaseRepository[User, int], IUsuarioRepository):
         ]
 
     def create(self, data: dict[str, Any]) -> User:
+        role_code = data.pop("role_code", None)
         password = data.pop("password")
+        if role_code:
+            data["role"] = RoleModel.objects.get(code=role_code)
         model = get_user_model().objects.create_user(password=password, **data)
         return self._to_domain(model)
 
@@ -44,12 +49,18 @@ class UsuariosRepository(BaseRepository[User, int], IUsuarioRepository):
         return self._to_domain(model) if model else None
 
     def save(self, user: User) -> None:
+        role = None
+        if user.role.code:
+            role = RoleModel.objects.filter(code=user.role.code).first()
         self.update(
             user.user_id,
             {
                 "username": user.username,
                 "email": user.email,
                 "is_active": user.is_active,
+                "role": role,
+                "departamento": user.departamento,
+                "cargo": user.cargo,
             },
         )
 
@@ -59,18 +70,32 @@ class UsuariosRepository(BaseRepository[User, int], IUsuarioRepository):
 
     def list_all_roles(self) -> list[Role]:
         return [
-            Role(role_id=model.id, name=model.name, description=model.description)
+            Role(
+                role_id=model.id,
+                name=model.name,
+                description=model.description,
+                code=model.code or "",
+            )
             for model in RoleModel.objects.all()
         ]
 
     @staticmethod
     def _to_domain(model) -> User:
         role = Role(role_id=0, name="usuario", description="Usuario autenticado")
+        if model.role:
+            role = Role(
+                role_id=model.role.id,
+                name=model.role.name,
+                description=model.role.description,
+                code=model.role.code or "",
+            )
         return User(
             user_id=model.pk,
             username=model.username,
             email=model.email,
             password="",
             role=role,
+            departamento=model.departamento,
+            cargo=model.cargo,
             is_active=model.is_active,
         )

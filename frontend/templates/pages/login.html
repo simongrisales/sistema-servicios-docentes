@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema SDS UCO</title>
+    <link href="{% static 'css/tailwind.css' %}" rel="stylesheet">
+</head>
+<body class="login-page">
+    <main class="login-stage">
+        <section class="login-card" aria-labelledby="login-title">
+            <img class="login-logo" src="{% static 'images/logo-uco.png' %}" alt="UCO">
+            <h1 id="login-title" class="sr-only">Ingreso al Sistema de Servicios Docentes</h1>
+
+            <form id="login-form" class="login-form" action="{% url 'token_obtain_pair_recaptcha' %}" method="post">
+                {% csrf_token %}
+                <label class="sr-only" for="username">Usuario</label>
+                <input id="username" name="username" type="text" autocomplete="username" placeholder="Usuario" required>
+
+                <label class="sr-only" for="password">Contrasena</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Contrasena" required>
+
+                <!-- reCAPTCHA v2 (checkbox) -->
+                <div class="mt-3" aria-hidden="true">
+                    <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-callback="onRecaptchaSuccess"></div>
+                </div>
+
+                <noscript>
+                    <div>
+                        Para acceder debes habilitar JavaScript.
+                    </div>
+                </noscript>
+
+                <a class="login-help" href="{% url 'dashboard' %}">Se te olvido la contrasena?</a>
+                <button class="btn btn-primary" type="submit">Acceder</button>
+                <p id="login-message" class="login-message" role="status"></p>
+            </form>
+
+        </section>
+    </main>
+
+    <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaApiLoaded&render=explicit" async defer></script>
+
+    <script>
+        // Guardamos el token de reCAPTCHA v2 en window para enviarlo en el POST.
+        window.__sdsRecaptchaToken = "";
+        function onRecaptchaApiLoaded() {}
+        function onRecaptchaSuccess(token) {
+            window.__sdsRecaptchaToken = token;
+        }
+
+        const form = document.getElementById("login-form");
+
+        const message = document.getElementById("login-message");
+
+        form.addEventListener("submit", async (event) => {
+
+            event.preventDefault();
+            message.textContent = "";
+
+            const response = await fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value
+                },
+                body: JSON.stringify({
+                    username: form.username.value,
+                    password: form.password.value,
+                    recaptcha_token: window.__sdsRecaptchaToken || ""
+                })
+            });
+
+
+
+            if (!response.ok) {
+                message.textContent = "Credenciales invalidas o usuario no registrado.";
+                return;
+            }
+
+            const data = await response.json();
+            localStorage.setItem("sds_access_token", data.access);
+            localStorage.setItem("sds_refresh_token", data.refresh);
+            window.location.href = "{% url 'dashboard' %}";
+        });
+    </script>
+</body>
+</html>

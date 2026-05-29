@@ -44,10 +44,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "django_ratelimit",
+    "django_recaptcha",
     "core",
     "apps.usuarios",
     "apps.academico",
     "apps.asignacion",
+    "apps.parametros",
     "apps.reservas",
     "apps.reportes",
     "apps.notificaciones",
@@ -61,10 +63,12 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
+
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -147,6 +151,10 @@ TIME_ZONE = "America/Bogota"
 USE_I18N = True
 USE_TZ = True
 
+# I18N: rutas para mensajes de Django en formatos nativos.
+LOCALE_PATHS = [BASE_DIR / "locale"]
+
+
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "frontend" / "static"]
@@ -160,6 +168,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+AUTH_USER_MODEL = "usuarios.UsuarioModel"
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": (

@@ -33,6 +33,10 @@ def _make_service(
         semestre=asignacion.semestre,
         estado=asignacion.estado,
     )
+    # _validar_capacidad accede a obtener_grupo/obtener_aula: devolvemos None
+    # para que el método salga sin comparar MagicMock entre sí.
+    repo_mock.obtener_grupo.return_value = None
+    repo_mock.obtener_aula.return_value = None
 
     strategy_mock = MagicMock()
     strategy_mock.asignar.return_value = ResultadoAsignacion(
@@ -58,6 +62,7 @@ def _input_dto() -> AsignacionInputDTO:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.django_db
 class TestEjecutarAsignacionAutomatica:
     def test_asignacion_exitosa_devuelve_output_dto(self):
         service = _make_service(existe_conflicto=False)

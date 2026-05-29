@@ -19,7 +19,8 @@ class NotificacionesViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_service(self) -> NotificacionService:
-        return NotificacionService()
+        from ..infrastructure.repositories import NotificacionRepository
+        return NotificacionService(repo=NotificacionRepository())
 
     def list(self, request):
         unread_only = request.query_params.get("unread") == "true"
@@ -74,7 +75,8 @@ def campana_notificaciones(request):
 
     notifications = []
     if request.user.is_authenticated:
-        service = NotificacionService()
+        from ..infrastructure.repositories import NotificacionRepository
+        service = NotificacionService(repo=NotificacionRepository())
         notifications = service.listar_notificaciones_no_leidas(str(request.user.pk))
 
     return render(

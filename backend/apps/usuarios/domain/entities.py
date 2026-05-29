@@ -6,6 +6,7 @@ class Role:
     role_id: int
     name: str
     description: str
+    code: str = ""
     can_access_api: bool = False
 
 
@@ -24,4 +25,6 @@ class User:
     email: str
     password: str
     role: Role
+    departamento: str = ""
+    cargo: str = ""
     is_active: bool = True

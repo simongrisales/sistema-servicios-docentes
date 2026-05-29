@@ -26,6 +26,7 @@ class SerializacionResultadoAsignacion(serializers.Serializer):
         child=serializers.CharField(),
         required=False,
     )
+    asignaciones = serializers.ListField(child=serializers.DictField(), required=False)
 
 
 class SerializacionCoberturaOutput(serializers.Serializer):

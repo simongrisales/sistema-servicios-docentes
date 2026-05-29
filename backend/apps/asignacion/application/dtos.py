@@ -30,6 +30,7 @@ class SimulacionOutputDTO:
     exitoso: bool
     mensaje: str
     conflictos: list[str] = field(default_factory=list)
+    asignaciones: list[dict] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

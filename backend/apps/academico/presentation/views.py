@@ -5,6 +5,11 @@ from rest_framework.response import Response
 
 from ..application.dtos import AulaInputDTO, GrupoInputDTO
 from ..application.use_cases import AcademicoService
+from ..infrastructure.repositories import (
+    AulaRepository,
+    DocenteRepository,
+    GrupoRepository,
+)
 from .serializers import AulaInputSerializer, AulaOutputSerializer, GrupoSerializer
 
 
@@ -13,14 +18,21 @@ class AcademicoViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
+    def _service(self) -> AcademicoService:
+        return AcademicoService(
+            aula_repo=AulaRepository(),
+            grupo_repo=GrupoRepository(),
+            docente_repo=DocenteRepository(),
+        )
+
     def list(self, request):
-        aulas = AcademicoService().listar_aulas_disponibles()
+        aulas = self._service().listar_aulas_disponibles()
         return Response(AulaOutputSerializer(aulas, many=True).data)
 
     def create(self, request):
         serializer = AulaInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        aula = AcademicoService().crear_aula(AulaInputDTO(**serializer.validated_data))
+        aula = self._service().crear_aula(AulaInputDTO(**serializer.validated_data))
         return Response(
             AulaOutputSerializer(aula).data,
             status=status.HTTP_201_CREATED,
@@ -30,7 +42,5 @@ class AcademicoViewSet(viewsets.ViewSet):
     def crear_grupo(self, request):
         serializer = GrupoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        grupo = AcademicoService().crear_grupo(
-            GrupoInputDTO(**serializer.validated_data)
-        )
+        grupo = self._service().crear_grupo(GrupoInputDTO(**serializer.validated_data))
         return Response(GrupoSerializer(grupo).data, status=status.HTTP_201_CREATED)

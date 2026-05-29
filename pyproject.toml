@@ -23,7 +23,17 @@ ignore = []
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.dev"
 pythonpath = ["backend"]
-testpaths = ["backend/tests"]
+testpaths = [
+    "backend/tests",
+    "backend/apps/asignacion/tests",
+    "backend/apps/academico/tests",
+    "backend/apps/usuarios/tests",
+    "backend/apps/parametros/tests",
+    "backend/apps/reservas/tests",
+    "backend/apps/reportes/tests",
+    "backend/apps/notificaciones/tests",
+]
+addopts = "-v --tb=short"
 
 [tool.coverage.run]
 source = ["backend"]

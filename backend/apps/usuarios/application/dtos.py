@@ -22,6 +22,9 @@ class UsuarioInputDTO:
     email: str
     password: str
     role_name: str | None = None
+    role_code: str | None = None
+    departamento: str = ""
+    cargo: str = ""
 
 
 @dataclass
@@ -29,6 +32,18 @@ class UsuarioOutputDTO:
     user_id: int
     username: str
     email: str
+    role_code: str = ""
+    role_name: str = ""
+    departamento: str = ""
+    cargo: str = ""
+
+
+@dataclass
+class RolOutputDTO:
+    role_id: int
+    code: str
+    name: str
+    description: str
 
 
 @dataclass

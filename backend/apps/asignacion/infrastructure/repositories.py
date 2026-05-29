@@ -1,9 +1,13 @@
 from collections.abc import Iterable
 from typing import Any
 
+from django.db import IntegrityError, transaction
+
+from apps.academico.infrastructure.models import AulaModel, GrupoModel
 from core.repositories import BaseRepository
 
 from ..domain.entities import Asignacion
+from ..domain.exceptions import AsignacionConflictoError
 from ..domain.interfaces import IAsignacionRepository
 from .models import AsignacionModel
 
@@ -48,18 +52,41 @@ class AsignacionRepository(
             estado="CONFIRMADO",
         ).exists()
 
+    @transaction.atomic
     def guardar(self, asignacion: Asignacion) -> Asignacion:
-        model = AsignacionModel.objects.create(
-            grupo_id=asignacion.grupo_id,
-            aula_id=asignacion.aula_id,
-            bloque_horario_id=asignacion.bloque_horario_id,
-            semestre=asignacion.semestre,
-            estado=asignacion.estado,
-        )
+        try:
+            model = AsignacionModel.objects.create(
+                grupo_id=asignacion.grupo_id,
+                aula_id=asignacion.aula_id,
+                bloque_horario_id=asignacion.bloque_horario_id,
+                semestre=asignacion.semestre,
+                estado=asignacion.estado,
+            )
+        except IntegrityError as exc:
+            raise AsignacionConflictoError(
+                ["El aula ya fue asignada en ese bloque y semestre."]
+            ) from exc
         return self._to_domain(model)
 
     def listar_por_semestre(self, semestre: str) -> Iterable[Asignacion]:
         return self.list(semestre=semestre)
+
+    def contar_grupos_por_semestre(self, semestre: str) -> int:
+        return GrupoModel.objects.filter(semestre=semestre, activo=True).count()
+
+    def contar_grupos_asignados_por_semestre(self, semestre: str) -> int:
+        return (
+            AsignacionModel.objects.filter(semestre=semestre, estado="CONFIRMADO")
+            .values("grupo_id")
+            .distinct()
+            .count()
+        )
+
+    def obtener_grupo(self, grupo_id: str):
+        return GrupoModel.objects.filter(id=grupo_id, activo=True).first()
+
+    def obtener_aula(self, aula_id: str):
+        return AulaModel.objects.filter(id=aula_id, activa=True).first()
 
     @staticmethod
     def _to_domain(model: AsignacionModel) -> Asignacion:

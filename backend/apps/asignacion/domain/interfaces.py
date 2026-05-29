@@ -19,6 +19,14 @@ class IAsignacionRepository(ABC):
     def listar_por_semestre(self, semestre: str) -> Iterable[Asignacion]:
         raise NotImplementedError
 
+    @abstractmethod
+    def contar_grupos_por_semestre(self, semestre: str) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def contar_grupos_asignados_por_semestre(self, semestre: str) -> int:
+        raise NotImplementedError
+
 
 class IAsignacionStrategy(ABC):
     @abstractmethod

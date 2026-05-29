@@ -15,10 +15,14 @@ from .serializers import CrearReservaSerializer, ReservaOutputSerializer
 class ReservasViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
+    def _service(self) -> ReservaService:
+        from ..infrastructure.repositories import ReservaRepository
+        return ReservaService(reserva_repo=ReservaRepository())
+
     def create(self, request):
         serializer = CrearReservaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        reserva = ReservaService().crear_reserva(
+        reserva = self._service().crear_reserva(
             CrearReservaInputDTO(**serializer.validated_data)
         )
         return Response(
@@ -28,12 +32,12 @@ class ReservasViewSet(viewsets.ViewSet):
 
     @action(detail=True, methods=["post"], url_path="confirmar")
     def confirmar(self, request, pk=None):
-        reserva = ReservaService().confirmar_reserva(
+        reserva = self._service().confirmar_reserva(
             ConfirmarReservaInputDTO(reserva_id=str(pk))
         )
         return Response(ReservaOutputSerializer(reserva).data)
 
     @action(detail=True, methods=["post"], url_path="cancelar")
     def cancelar(self, request, pk=None):
-        ReservaService().cancelar_reserva(CancelarReservaInputDTO(reserva_id=str(pk)))
+        self._service().cancelar_reserva(CancelarReservaInputDTO(reserva_id=str(pk)))
         return Response(status=status.HTTP_204_NO_CONTENT)
