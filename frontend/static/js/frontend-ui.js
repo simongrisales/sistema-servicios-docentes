@@ -9,18 +9,36 @@ document.addEventListener("DOMContentLoaded", function () {
     const viewButtons = document.querySelectorAll("[data-dashboard-view]");
     const panels = document.querySelectorAll("[data-dashboard-panel]");
 
+    const setView = (view) => {
+        if (!view) return;
+
+        viewButtons.forEach((item) => item.classList.remove("is-active"));
+        viewButtons.forEach((item) => {
+            if (item.dataset.dashboardView === view) {
+                item.classList.add("is-active");
+            }
+        });
+
+        panels.forEach((panel) => {
+            panel.classList.toggle("is-hidden", panel.dataset.dashboardPanel !== view);
+        });
+    };
+
     viewButtons.forEach((button) => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", (e) => {
             const view = button.dataset.dashboardView;
-
-            viewButtons.forEach((item) => item.classList.remove("is-active"));
-            button.classList.add("is-active");
-
-            panels.forEach((panel) => {
-                panel.classList.toggle("is-hidden", panel.dataset.dashboardPanel !== view);
-            });
+            // Si es un link, no navega: solo cambia vista.
+            e.preventDefault();
+            setView(view);
         });
     });
+
+    // Soporta deep-link por hash: #form o #calendar
+    if (window.location.hash) {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) setView(hash);
+    }
+
 
     document.querySelectorAll("[data-toast-close]").forEach((button) => {
         button.addEventListener("click", () => window.hideToast());

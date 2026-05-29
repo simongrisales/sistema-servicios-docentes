@@ -38,7 +38,13 @@
     </div>
 
     <div class="content-stage is-hidden" data-dashboard-panel="form">
-        <form class="reservation-form" action="/api/academico/aulas/" method="post">
+        <form class="reservation-form"
+              action="/api/academico/aulas/"
+              method="post"
+              hx-post="/api/academico/aulas/"
+              hx-target="#main-app"
+              hx-swap="none"
+        >
             {% csrf_token %}
             <h1>Informacion de la reserva</h1>
 
@@ -64,8 +70,13 @@
                 <textarea name="restricciones" rows="4" placeholder="Requerimientos del aula"></textarea>
             </label>
 
-            <button class="btn btn-accent" type="button" onclick="window.showToast({type: 'success', message: 'Solicitud preparada para validacion.'})">Enviar</button>
+            <button class="btn btn-accent" type="submit">Enviar</button>
         </form>
     </div>
+
 </section>
 {% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/sds/dashboard.js' %}"></script>
+{% endblock %}
+

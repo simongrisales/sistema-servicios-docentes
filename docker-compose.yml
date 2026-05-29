@@ -146,11 +146,17 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
 
-  zap:
-    image: ghcr.io/zaproxy/zaproxy:stable
-    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.active=true
-    ports:
-      - "8085:8080"
+  # zap:
+  #   image: ghcr.io/zaproxy/zaproxy:stable
+  #   # Contenedor de ZAP solo para escaneo/diagnóstico (no se levanta en producción).
+  #   # Dejarlo activo genera warnings repetitivos desde ZAP-IO-Server hacia la API interna.
+  #   command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true
+  #   ports:
+  #     - "8085:8080"
+
+
+
+
 
 volumes:
   postgres_data:

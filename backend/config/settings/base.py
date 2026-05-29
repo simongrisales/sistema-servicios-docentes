@@ -9,7 +9,20 @@ env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(str, "clave-insegura-solo-para-desarrollo"),
     DJANGO_SECRET_KEY=(str, "clave-insegura-solo-para-desarrollo"),
-    ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
+    # Permite Hostnames internos de Docker y/o requests directos a servicios.
+    # Importante: Django valida request.get_host() contra ALLOWED_HOSTS.
+    ALLOWED_HOSTS=(list, [
+        "localhost",
+        "127.0.0.1",
+        "django",
+        "daphne",
+        "nginx",
+        "django:8000",
+        "daphne:8001",
+        "127.0.0.1:8000",
+        "*:8000",
+        "*",
+    ]),
     POSTGRES_DB=(str, "sistema_servicios_docentes"),
     POSTGRES_USER=(str, "servicios_docentes"),
     POSTGRES_PASSWORD=(str, "servicios_docentes"),
@@ -24,6 +37,7 @@ env = environ.Env(
     RECAPTCHA_PRIVATE_KEY=(str, ""),
 )
 
+
 env_file = BASE_DIR / ".env"
 if env_file.exists():
     environ.Env.read_env(env_file)
@@ -31,6 +45,31 @@ if env_file.exists():
 SECRET_KEY = env("SECRET_KEY") or env("DJANGO_SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+
+# Normalización: dependiendo de cómo Docker/ENV inyecte variables,
+# ALLOWED_HOSTS puede venir como lista, string ("a,b,c") o string con comas.
+# Esto evita errores de DisallowedHost en producción.
+if isinstance(ALLOWED_HOSTS, str):
+    ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS.split(",") if h.strip()]
+
+# En despliegues con Docker, es común que el host llegue como <servicio>:<puerto>
+# (ej: "django:8000"). También puede incluir el puerto explícitamente.
+extra_hosts = [
+    "django:8000",
+    "daphne:8001",
+    "127.0.0.1:8000",
+    "localhost:8000",
+    "*:8000",
+]
+for h in extra_hosts:
+    if h not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(h)
+
+# Normalización extra: evitar fallos si ALLOWED_HOSTS incluye valores con espacios.
+ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h and h.strip()]
+
+
+
 
 INSTALLED_APPS = [
     "django_prometheus",

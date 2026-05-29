@@ -2,6 +2,10 @@ from .base import *  # noqa: F403
 
 DEBUG = False
 
+# En despliegue Docker/Nginx pueden existir hosts internos con puertos.
+# Para evitar DisallowedHost en salud/metrics/servicios internos, permitimos todos.
+ALLOWED_HOSTS = ["*"]
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True

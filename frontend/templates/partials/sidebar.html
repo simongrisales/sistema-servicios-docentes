@@ -8,13 +8,14 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg>
             <span>Profesores</span>
         </a>
-        <a class="sidebar-link" href="/api/academico/aulas/">
+        <a class="sidebar-link" href="{% url 'dashboard' %}" data-dashboard-view="form">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h12v18M8 7h6M8 11h6M8 15h4M3 21h18"/></svg>
             <span>Solicitar Reserva</span>
         </a>
-        <a class="sidebar-link" href="/api/asignacion/">
+        <a class="sidebar-link" href="{% url 'dashboard' %}" data-dashboard-view="calendar">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg>
             <span>Reservas y Aulas</span>
         </a>
+
     </nav>
 </aside>
