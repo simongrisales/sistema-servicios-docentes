@@ -1,3 +1,5 @@
+from datetime import time
+
 from django.contrib.auth import authenticate, get_user_model
 from django.core.management import call_command
 from django.test import Client, TestCase
@@ -10,11 +12,14 @@ from apps.academico.infrastructure.models import (
     AulaModel,
     CursoModel,
     DocenteModel,
+    FacultadModel,
     GrupoModel,
     HorarioBloqueModel,
+    ProgramaModel,
 )
 from apps.asignacion.infrastructure.models import AsignacionModel
 from apps.parametros.infrastructure.models import CatalogoParametroModel
+from apps.usuarios.infrastructure.models import RoleModel
 from apps.usuarios.management.commands.seed_base_data import DEMO_PASSWORD
 
 
@@ -23,8 +28,96 @@ class SistemaSmokeTests(TestCase):
     def setUpTestData(cls) -> None:
         call_command("seed_base_data")
         cls.user_model = get_user_model()
+        cls._ensure_smoke_data()
         cls.admin = cls.user_model.objects.get(username="admin.sds")
         cls.access_token = str(RefreshToken.for_user(cls.admin).access_token)
+
+    @classmethod
+    def _ensure_smoke_data(cls) -> None:
+        if AulaModel.objects.exists():
+            return
+
+        role, _ = RoleModel.objects.get_or_create(
+            code="facultad",
+            defaults={"name": "Facultad"},
+        )
+        usuario, _ = cls.user_model.objects.get_or_create(
+            username="docente.smoke",
+            defaults={
+                "email": "docente.smoke@uco.edu.co",
+                "role": role,
+                "departamento": "Facultad Ingenieria",
+                "cargo": "Docente",
+                "is_active": True,
+            },
+        )
+        usuario.set_password(DEMO_PASSWORD)
+        usuario.save(update_fields=["password"])
+
+        facultad, _ = FacultadModel.objects.get_or_create(
+            codigo="SMK",
+            defaults={"nombre": "Facultad Smoke", "activa": True},
+        )
+        programa, _ = ProgramaModel.objects.get_or_create(
+            codigo="SMK-GEN",
+            defaults={
+                "facultad": facultad,
+                "nombre": "Programa Smoke",
+                "activo": True,
+            },
+        )
+        docente, _ = DocenteModel.objects.get_or_create(
+            email="smoke.docente@uco.edu.co",
+            defaults={
+                "nombre": "Docente Smoke",
+                "activo": True,
+                "usuario": usuario,
+            },
+        )
+        curso, _ = CursoModel.objects.get_or_create(
+            codigo="SMK101",
+            defaults={
+                "programa": programa,
+                "nombre": "Curso Smoke",
+                "creditos": 3,
+                "activo": True,
+            },
+        )
+        AulaModel.objects.get_or_create(
+            nombre="Aula Smoke 101",
+            defaults={
+                "capacidad": 40,
+                "tipo": "aula_regular",
+                "disponible": True,
+                "restricciones": {},
+                "activa": True,
+            },
+        )
+        HorarioBloqueModel.objects.get_or_create(
+            dia="lunes",
+            hora_inicio=time(8, 0),
+            hora_fin=time(10, 0),
+            defaults={"activo": True},
+        )
+        GrupoModel.objects.get_or_create(
+            curso=curso,
+            codigo="SMK-01",
+            semestre="2026-1",
+            defaults={
+                "docente": docente,
+                "num_estudiantes": 24,
+                "activo": True,
+            },
+        )
+        CatalogoParametroModel.objects.get_or_create(
+            clave="max_aulas_por_semestre",
+            defaults={
+                "valor": 10,
+                "grupo": "asignacion",
+                "descripcion": "Parametro base de smoke test",
+                "activo": True,
+            },
+        )
 
     def _api_client(self) -> APIClient:
         client = APIClient()
