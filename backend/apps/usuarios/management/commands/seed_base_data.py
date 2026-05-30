@@ -3,6 +3,7 @@ from datetime import time
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+
 from apps.usuarios.infrastructure.models import RoleModel
 
 ROLES = [
@@ -179,4 +180,3 @@ class Command(BaseCommand):
                     "activo": p["activo"],
                 },
             )
-

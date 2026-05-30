@@ -35,4 +35,6 @@ class ObtenerValorSerializer(serializers.Serializer):
     """Serializer para el endpoint de valor rapido."""
 
     clave = serializers.CharField(max_length=120, label=_("Clave"))
-    default = serializers.JSONField(default=None, required=False, label=_("Valor por defecto"))
+    default = serializers.JSONField(
+        default=None, required=False, label=_("Valor por defecto")
+    )

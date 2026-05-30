@@ -28,9 +28,7 @@ def _to_output(parametro: CatalogoParametro) -> ParametroOutputDTO:
 class CatalogoParametroService:
     """Servicio de aplicación para el catálogo de parámetros del sistema."""
 
-    def __init__(
-        self, repo: ICatalogoParametroRepository | None = None
-    ) -> None:
+    def __init__(self, repo: ICatalogoParametroRepository | None = None) -> None:
         self._repo = repo
 
     # ------------------------------------------------------------------
@@ -40,9 +38,7 @@ class CatalogoParametroService:
     def obtener(self, clave: str) -> ParametroOutputDTO:
         """Obtiene un parámetro por clave. Lanza excepción si no existe."""
         if self._repo is None:
-            raise CatalogoParametroNoEncontradoError(
-                "Repositorio no configurado."
-            )
+            raise CatalogoParametroNoEncontradoError("Repositorio no configurado.")
         parametro = self._repo.obtener(clave)
         if parametro is None:
             raise CatalogoParametroNoEncontradoError(
@@ -50,9 +46,7 @@ class CatalogoParametroService:
             )
         return _to_output(parametro)
 
-    def listar(
-        self, grupo: str | None = None
-    ) -> Iterable[ParametroOutputDTO]:
+    def listar(self, grupo: str | None = None) -> Iterable[ParametroOutputDTO]:
         """Lista todos los parámetros, opcionalmente filtrados por grupo."""
         if self._repo is None:
             return []
@@ -98,9 +92,7 @@ class CatalogoParametroService:
     def actualizar(self, dto: ParametroInputDTO) -> ParametroOutputDTO:
         """Actualiza un parámetro existente. Falla si no existe."""
         if self._repo is None:
-            raise CatalogoParametroNoEncontradoError(
-                "Repositorio no configurado."
-            )
+            raise CatalogoParametroNoEncontradoError("Repositorio no configurado.")
         existing = self._repo.obtener(dto.clave)
         if existing is None:
             raise CatalogoParametroNoEncontradoError(
@@ -118,9 +110,7 @@ class CatalogoParametroService:
     def eliminar(self, clave: str) -> None:
         """Elimina un parámetro. Falla si no existe."""
         if self._repo is None:
-            raise CatalogoParametroNoEncontradoError(
-                "Repositorio no configurado."
-            )
+            raise CatalogoParametroNoEncontradoError("Repositorio no configurado.")
         if self._repo.obtener(clave) is None:
             raise CatalogoParametroNoEncontradoError(
                 f"No existe el parámetro '{clave}'."

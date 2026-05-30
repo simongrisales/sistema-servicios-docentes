@@ -10,16 +10,23 @@
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
     <main class="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
-        <section class="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur">
+        <section id="login-card"
+                 class="login-card w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur">
             <div class="mb-8 text-center">
                 <p class="text-sm uppercase tracking-[0.35em] text-cyan-300">UCO</p>
                 <h1 class="mt-2 text-3xl font-semibold">Sistema de Servicios Docentes</h1>
                 <p class="mt-2 text-sm text-slate-400">Ingresa con tu cuenta institucional.</p>
             </div>
 
-            <form id="login-form" method="post" action="/api/token/recaptcha/" class="space-y-5">
+            <form id="login-form" method="post" action="{% url 'login' %}"
+                  data-token-url="{% url 'token_obtain_pair' %}" class="space-y-5">
                 {% csrf_token %}
                 <input type="hidden" name="recaptcha_token" id="recaptcha-token">
+                {% if error_message %}
+                    <p class="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                        {{ error_message }}
+                    </p>
+                {% endif %}
 
                 <label class="block">
                     <span class="mb-2 block text-sm font-medium text-slate-300">Usuario</span>

@@ -2,12 +2,12 @@
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from ..application.dtos import ObtenerValorInputDTO, ParametroInputDTO
+from apps.usuarios.infrastructure.permissions import EsAdministrador
 
+from ..application.dtos import ObtenerValorInputDTO, ParametroInputDTO
 from ..application.use_cases import CatalogoParametroService
 from ..domain.exceptions import (
     CatalogoParametroDuplicadoError,
@@ -16,7 +16,6 @@ from ..domain.exceptions import (
 )
 from ..infrastructure.repositories import CatalogoParametroRepository
 from .serializers import ObtenerValorSerializer, ParametroSerializer
-from apps.usuarios.infrastructure.permissions import EsAdministrador
 
 
 class CatalogoParametroViewSet(viewsets.ViewSet):
@@ -43,9 +42,7 @@ class CatalogoParametroViewSet(viewsets.ViewSet):
     def list(self, request: Request) -> Response:
         grupo = request.query_params.get("grupo")
         parametros = self._service().listar(grupo=grupo)
-        return Response(
-            ParametroSerializer(list(parametros), many=True).data
-        )
+        return Response(ParametroSerializer(list(parametros), many=True).data)
 
     def create(self, request: Request) -> Response:
         serializer = ParametroSerializer(data=request.data)
@@ -67,9 +64,7 @@ class CatalogoParametroViewSet(viewsets.ViewSet):
         try:
             output = self._service().obtener(pk)
         except CatalogoParametroNoEncontradoError as exc:
-            return Response(
-                {"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
         return Response(ParametroSerializer(output).data)
 
     def update(self, request: Request, pk: str | None = None) -> Response:
@@ -80,7 +75,10 @@ class CatalogoParametroViewSet(viewsets.ViewSet):
         dto = ParametroInputDTO(**data)
         try:
             output = self._service().actualizar(dto)
-        except (CatalogoParametroNoEncontradoError, CatalogoParametroInvalidoError) as exc:
+        except (
+            CatalogoParametroNoEncontradoError,
+            CatalogoParametroInvalidoError,
+        ) as exc:
             return Response(
                 {"detail": str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -91,9 +89,7 @@ class CatalogoParametroViewSet(viewsets.ViewSet):
         try:
             self._service().eliminar(pk)
         except CatalogoParametroNoEncontradoError as exc:
-            return Response(
-                {"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # ------------------------------------------------------------------

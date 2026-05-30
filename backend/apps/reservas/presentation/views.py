@@ -17,6 +17,7 @@ class ReservasViewSet(viewsets.ViewSet):
 
     def _service(self) -> ReservaService:
         from ..infrastructure.repositories import ReservaRepository
+
         return ReservaService(reserva_repo=ReservaRepository())
 
     def create(self, request):

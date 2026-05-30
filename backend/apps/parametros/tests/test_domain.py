@@ -37,6 +37,7 @@ class TestCatalogoParametroEntity:
     def test_entidad_es_inmutable(self):
         p = CatalogoParametro(clave="k", valor=1, grupo="general")
         from dataclasses import FrozenInstanceError
+
         with pytest.raises(FrozenInstanceError):
             p.activo = False  # type: ignore[misc]
 

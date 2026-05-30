@@ -13,8 +13,7 @@ from .models import NotificacionModel
 
 
 class NotificacionRepository(
-    BleachSanitizerMixin,
-    BaseRepository[Notificacion, str], INotificacionRepository
+    BleachSanitizerMixin, BaseRepository[Notificacion, str], INotificacionRepository
 ):
     """Repositorio concreto de notificaciones usando Django ORM."""
 

@@ -1,7 +1,7 @@
 from rest_framework import status
 
 
-class SystemException(Exception):
+class SistemaBaseError(Exception):
     """Excepcion base para errores controlados del sistema."""
 
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -12,30 +12,33 @@ class SystemException(Exception):
             self.status_code = status_code
 
 
-class CredencialesInvalidasError(SystemException):
+SystemException = SistemaBaseError
+
+
+class CredencialesInvalidasError(SistemaBaseError):
     def __init__(self, message: str = "Credenciales invalidas.") -> None:
         super().__init__(message, status.HTTP_401_UNAUTHORIZED)
 
 
-class PermisoInsuficienteError(SystemException):
+class PermisoInsuficienteError(SistemaBaseError):
     def __init__(
         self, message: str = "No tienes permisos para realizar esta accion."
     ) -> None:
         super().__init__(message, status.HTTP_403_FORBIDDEN)
 
 
-class AulaConflictoError(SystemException):
+class AulaConflictoError(SistemaBaseError):
     def __init__(
         self, message: str = "El aula ya esta asignada en ese horario."
     ) -> None:
         super().__init__(message, status.HTTP_409_CONFLICT)
 
 
-class CapacidadInsuficienteError(SystemException):
+class CapacidadInsuficienteError(SistemaBaseError):
     def __init__(self, message: str = "La capacidad del aula es insuficiente.") -> None:
         super().__init__(message, status.HTTP_400_BAD_REQUEST)
 
 
-class ReservaConflictoError(SystemException):
+class ReservaConflictoError(SistemaBaseError):
     def __init__(self, message: str = "El aula esta reservada en ese periodo.") -> None:
         super().__init__(message, status.HTTP_409_CONFLICT)

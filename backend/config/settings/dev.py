@@ -1,7 +1,7 @@
 import sys  # noqa: E402
 
 from .base import *  # noqa: F403
-from .base import env
+from .base import BASE_DIR, env
 
 DEBUG = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
@@ -41,4 +41,3 @@ SILENCED_SYSTEM_CHECKS = [
     "django_recaptcha.recaptcha_test_key_error",
     "captcha.recaptcha_test_key_error",
 ]
-

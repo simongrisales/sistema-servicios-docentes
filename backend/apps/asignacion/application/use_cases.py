@@ -211,10 +211,7 @@ class AsignacionUseCaseService:
             NotificacionRepository()
         )
         usuario = (
-            get_user_model()
-            .objects.filter(is_superuser=True)
-            .order_by("id")
-            .first()
+            get_user_model().objects.filter(is_superuser=True).order_by("id").first()
         )
         if usuario is None:
             return
@@ -288,6 +285,7 @@ class AsignacionUseCaseService:
             raise CapacidadInsuficienteError(
                 "El aula no tiene capacidad suficiente para el grupo."
             )
+
 
 EjecutarAsignacionAutomatica = AsignacionUseCaseService
 SimularAsignacion = AsignacionUseCaseService

@@ -45,8 +45,12 @@ class NotificacionModel(models.Model):
         related_name="notificaciones_recibidas",
         verbose_name=_("Usuario destino"),
     )
-    lectura_requerida = models.BooleanField(default=True, verbose_name=_("Requiere lectura"))
-    es_leida = models.BooleanField(default=False, db_index=True, verbose_name=_("Leida"))
+    lectura_requerida = models.BooleanField(
+        default=True, verbose_name=_("Requiere lectura")
+    )
+    es_leida = models.BooleanField(
+        default=False, db_index=True, verbose_name=_("Leida")
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
     fecha_lectura = models.DateTimeField(null=True, blank=True)
     activo = models.BooleanField(default=True, verbose_name=_("Activo"))

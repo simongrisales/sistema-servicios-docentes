@@ -26,11 +26,8 @@ class FrontendPagesTests(SimpleTestCase):
     def test_dashboard_page_renders_calendar_and_reservation_form(self) -> None:
         response = self.client.get(reverse("dashboard"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "sidebar")
-        self.assertContains(response, "Sistema Servicios Docentes")
-        self.assertContains(response, 'data-dashboard-panel="calendar"')
-        self.assertContains(response, "Informacion de la reserva")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response.url)
 
     def test_frontend_static_assets_exist(self) -> None:
         static_dir = Path(settings.BASE_DIR) / "frontend" / "static"

@@ -55,6 +55,7 @@ class AsignacionRepository(
     @transaction.atomic
     def guardar(self, asignacion: Asignacion) -> Asignacion:
         try:
+            self._bloquear_recurso_asignacion(asignacion)
             model = AsignacionModel.objects.create(
                 grupo_id=asignacion.grupo_id,
                 aula_id=asignacion.aula_id,
@@ -67,6 +68,20 @@ class AsignacionRepository(
                 ["El aula ya fue asignada en ese bloque y semestre."]
             ) from exc
         return self._to_domain(model)
+
+    def _bloquear_recurso_asignacion(self, asignacion: Asignacion) -> None:
+        aula_model = apps.get_model("academico", "AulaModel")
+        bloque_model = apps.get_model("academico", "HorarioBloqueModel")
+        aula_model.objects.select_for_update().get(id=asignacion.aula_id)
+        bloque_model.objects.select_for_update().get(id=asignacion.bloque_horario_id)
+        if self.existe_conflicto(
+            str(asignacion.aula_id),
+            str(asignacion.bloque_horario_id),
+            asignacion.semestre,
+        ):
+            raise AsignacionConflictoError(
+                ["El aula ya fue asignada en ese bloque y semestre."]
+            )
 
     def listar_por_semestre(self, semestre: str) -> Iterable[Asignacion]:
         return self.list(semestre=semestre)

@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from typing import Any
 
+from django.db import transaction
 from django.utils import timezone
 
 from core.repositories import BaseRepository
@@ -55,6 +56,23 @@ class ReservaRepository(BaseRepository[Reserva, str], IReservaRepository):
         )
         return [self._to_domain(model) for model in queryset]
 
+    def crear_reserva(self, reserva: Reserva) -> Reserva:
+        with transaction.atomic():
+            self._bloquear_aula_reserva(reserva)
+            conflicts = ReservaModel.objects.select_for_update().filter(
+                aula_id=reserva.aula_id,
+                inicio__lt=reserva.bloque_horario_fin,
+                fin__gt=reserva.bloque_horario_inicio,
+                estado__in=[ReservaEstado.PENDIENTE, ReservaEstado.CONFIRMADA],
+            )
+            if conflicts.exists():
+                from ..domain.exceptions import ReservaConflictoError
+
+                raise ReservaConflictoError(
+                    "El aula ya tiene una reserva en ese horario."
+                )
+            return self._create_from_domain(reserva)
+
     def find_expired_reservations(self) -> list[Reserva]:
         queryset = ReservaModel.objects.filter(
             fin__lt=timezone.now(),
@@ -72,6 +90,12 @@ class ReservaRepository(BaseRepository[Reserva, str], IReservaRepository):
             estado=reserva.estado,
         )
         return self._to_domain(model)
+
+    @staticmethod
+    def _bloquear_aula_reserva(reserva: Reserva) -> None:
+        from apps.academico.infrastructure.models import AulaModel
+
+        AulaModel.objects.select_for_update().get(id=reserva.aula_id)
 
     @staticmethod
     def _to_domain(model: ReservaModel) -> Reserva:

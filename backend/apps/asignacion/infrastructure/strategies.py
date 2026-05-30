@@ -18,7 +18,8 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
             reverse=True,
         )
         aulas_filtradas = [
-            aula for aula in aulas
+            aula
+            for aula in aulas
             if aula.get("disponible", True) and aula.get("activa", True)
         ]
         aulas_ordenadas = sorted(
@@ -49,11 +50,7 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
                 )
 
             aula = self._buscar_aula(
-                aulas_ordenadas,
-                estudiantes,
-                bloque_id,
-                ocupacion,
-                tipo_requerido
+                aulas_ordenadas, estudiantes, bloque_id, ocupacion, tipo_requerido
             )
             if aula is None:
                 # Si no encontramos con el tipo requerido, intentamos buscar sin la
@@ -65,9 +62,9 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
                         estudiantes,
                         bloque_id,
                         ocupacion,
-                        tipo_requerido=None
+                        tipo_requerido=None,
                     )
-                
+
                 if aula is None:
                     conflictos.append(
                         "Grupo "
@@ -124,7 +121,7 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
         bloque_id: str,
         ocupacion: set[tuple[str, str]],
         tipo_requerido: str | None = None,
-        ) -> dict | None:
+    ) -> dict | None:
         for aula in aulas:
             aula_id = str(aula.get("id") or aula.get("aula_id"))
             if aula.get("capacidad", 0) < estudiantes:

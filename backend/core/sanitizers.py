@@ -1,6 +1,6 @@
+import re
 from collections.abc import Mapping
 from html import escape
-import re
 from typing import Any
 
 try:

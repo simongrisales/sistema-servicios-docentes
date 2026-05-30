@@ -150,7 +150,9 @@ class TestEjecutarAsignacionAutomatica:
             service.ejecutar_asignacion_automatica_semestre(
                 "2026-1",
                 grupos=[],
-                aulas=[{"id": "a1", "capacidad": 20, "disponible": True, "activa": True}],
+                aulas=[
+                    {"id": "a1", "capacidad": 20, "disponible": True, "activa": True}
+                ],
             )
 
     def test_asignacion_masiva_llama_repo_y_notificacion(self):

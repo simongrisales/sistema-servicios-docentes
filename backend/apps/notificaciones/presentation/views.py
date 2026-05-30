@@ -20,6 +20,7 @@ class NotificacionesViewSet(viewsets.ViewSet):
 
     def get_service(self) -> NotificacionService:
         from ..infrastructure.repositories import NotificacionRepository
+
         return NotificacionService(repo=NotificacionRepository())
 
     def list(self, request):
@@ -76,6 +77,7 @@ def campana_notificaciones(request):
     notifications = []
     if request.user.is_authenticated:
         from ..infrastructure.repositories import NotificacionRepository
+
         service = NotificacionService(repo=NotificacionRepository())
         notifications = service.listar_notificaciones_no_leidas(str(request.user.pk))
 

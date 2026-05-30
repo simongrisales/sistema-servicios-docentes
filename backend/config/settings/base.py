@@ -1,5 +1,5 @@
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
 import environ
 
@@ -13,18 +13,21 @@ env = environ.Env(
     DATABASE_URL=(str, ""),
     # Permite Hostnames internos de Docker y/o requests directos a servicios.
     # Importante: Django valida request.get_host() contra ALLOWED_HOSTS.
-    ALLOWED_HOSTS=(list, [
-        "localhost",
-        "127.0.0.1",
-        "django",
-        "daphne",
-        "nginx",
-        "django:8000",
-        "daphne:8001",
-        "127.0.0.1:8000",
-        "*:8000",
-        "*",
-    ]),
+    ALLOWED_HOSTS=(
+        list,
+        [
+            "localhost",
+            "127.0.0.1",
+            "django",
+            "daphne",
+            "nginx",
+            "django:8000",
+            "daphne:8001",
+            "127.0.0.1:8000",
+            "*:8000",
+            "*",
+        ],
+    ),
     POSTGRES_DB=(str, "sistema_servicios_docentes"),
     POSTGRES_USER=(str, "servicios_docentes"),
     POSTGRES_PASSWORD=(str, "servicios_docentes"),
@@ -65,6 +68,9 @@ if isinstance(ALLOWED_HOSTS, str):
 # En despliegues con Docker, es común que el host llegue como <servicio>:<puerto>
 # (ej: "django:8000"). También puede incluir el puerto explícitamente.
 extra_hosts = [
+    "django",
+    "daphne",
+    "nginx",
     "django:8000",
     "daphne:8001",
     "127.0.0.1:8000",
@@ -77,8 +83,6 @@ for h in extra_hosts:
 
 # Normalización extra: evitar fallos si ALLOWED_HOSTS incluye valores con espacios.
 ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS if h and h.strip()]
-
-
 
 
 INSTALLED_APPS = [
@@ -94,6 +98,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_ratelimit",
     "django_recaptcha",
+    "rest_framework_simplejwt.token_blacklist",
     "notifications.apps.NotificationsConfig",
     "core",
     "apps.usuarios",
@@ -127,7 +132,10 @@ ASGI_APPLICATION = "config.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "frontend" / "templates"],
+        "DIRS": [
+            BASE_DIR / "frontend" / "templates",
+            BACKEND_DIR / "apps" / "usuarios" / "presentation" / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

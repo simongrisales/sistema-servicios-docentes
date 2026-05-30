@@ -4,7 +4,6 @@ Sin imports de Django — Python puro.
 """
 
 from dataclasses import dataclass
-
 from typing import Any
 
 
@@ -29,14 +28,15 @@ class CatalogoParametro:
     def __post_init__(self) -> None:
         if not self.clave or not self.clave.strip():
             from .exceptions import CatalogoParametroInvalidoError
+
             raise CatalogoParametroInvalidoError(
                 "La clave del parámetro no puede estar vacía."
             )
         if self.grupo not in GRUPOS_VALIDOS:
             from .exceptions import CatalogoParametroInvalidoError
+
             raise CatalogoParametroInvalidoError(
-                f"Grupo '{self.grupo}' no reconocido. "
-                f"Válidos: {GRUPOS_VALIDOS}"
+                f"Grupo '{self.grupo}' no reconocido. " f"Válidos: {GRUPOS_VALIDOS}"
             )
 
 

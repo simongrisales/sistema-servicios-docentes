@@ -13,6 +13,7 @@ class ReporteViewSet(viewsets.ViewSet):
 
     def _service(self) -> ReporteService:
         from ..infrastructure.repositories import ReporteRepository
+
         return ReporteService(reporte_repo=ReporteRepository())
 
     def list(self, request):

@@ -1,41 +1,54 @@
 from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import include, path
-from django.views.generic import TemplateView
-from django.conf import settings
-
+from django_prometheus.exports import ExportToDjangoView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from django_prometheus.exports import ExportToDjangoView
+
 from apps.usuarios.presentation.views import (
-    AdmisionesDashboardView,
     AdministradorDashboardView,
+    AdmisionesDashboardView,
     AuxiliarDocDashboardView,
     DashboardRedirectView,
     FacultadDashboardView,
     LiderDocDashboardView,
+    LoginPageView,
+    LogoutView,
 )
-
 
 urlpatterns = [
     path("", lambda request: redirect("login"), name="home"),
-    path(
-        "login/",
-        TemplateView.as_view(
-            template_name="usuarios/login.html",
-            extra_context={"recaptcha_site_key": settings.RECAPTCHA_PUBLIC_KEY},
-        ),
-        name="login",
-    ),
+    path("login/", LoginPageView.as_view(), name="login"),
+    path("logout/", LogoutView.as_view(), name="logout"),
     path("dashboard/", DashboardRedirectView.as_view(), name="dashboard"),
-    path("dashboard/administrador/", AdministradorDashboardView.as_view(), name="dashboard_administrador"),
-    path("dashboard/lider-doc/", LiderDocDashboardView.as_view(), name="dashboard_lider_doc"),
-    path("dashboard/auxiliar-doc/", AuxiliarDocDashboardView.as_view(), name="dashboard_auxiliar_doc"),
-    path("dashboard/facultad/", FacultadDashboardView.as_view(), name="dashboard_facultad"),
-    path("dashboard/admisiones/", AdmisionesDashboardView.as_view(), name="dashboard_admisiones"),
+    path(
+        "dashboard/administrador/",
+        AdministradorDashboardView.as_view(),
+        name="dashboard_administrador",
+    ),
+    path(
+        "dashboard/lider-doc/",
+        LiderDocDashboardView.as_view(),
+        name="dashboard_lider_doc",
+    ),
+    path(
+        "dashboard/auxiliar-doc/",
+        AuxiliarDocDashboardView.as_view(),
+        name="dashboard_auxiliar_doc",
+    ),
+    path(
+        "dashboard/facultad/",
+        FacultadDashboardView.as_view(),
+        name="dashboard_facultad",
+    ),
+    path(
+        "dashboard/admisiones/",
+        AdmisionesDashboardView.as_view(),
+        name="dashboard_admisiones",
+    ),
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
@@ -44,10 +57,8 @@ urlpatterns = [
         name="swagger-ui",
     ),
     path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema")),
-
     path("api/", include("apps.usuarios.presentation.urls")),
     path("api/", include("apps.academico.presentation.urls")),
-
     path("api/", include("apps.asignacion.presentation.urls")),
     path("api/", include("apps.parametros.presentation.urls")),
     path("api/", include("apps.reservas.presentation.urls")),

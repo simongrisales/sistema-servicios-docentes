@@ -35,7 +35,12 @@ class ReservaService:
             solicitante_id=input_dto.solicitante_id,
         )
         if self.reserva_repo:
-            reserva = self.reserva_repo.create(reserva)
+            crear_reserva = getattr(self.reserva_repo, "crear_reserva", None)
+            reserva = (
+                crear_reserva(reserva)
+                if crear_reserva
+                else self.reserva_repo.create(reserva)
+            )
         return self._to_output(reserva)
 
     def confirmar_reserva(

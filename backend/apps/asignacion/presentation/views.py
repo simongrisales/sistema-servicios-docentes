@@ -3,11 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.usuarios.infrastructure.permissions import EsAdministradorOLiderDOC
+
 from ..application.dtos import AsignacionInputDTO, SimulacionInputDTO
 from ..application.use_cases import AsignacionUseCaseService
 from ..infrastructure.repositories import AsignacionRepository
 from ..infrastructure.strategies import PrioridadEstudiantesStrategy
-from apps.usuarios.infrastructure.permissions import EsAdministradorOLiderDOC
 from .serializers import (
     SerializacionAsignacion,
     SerializacionCoberturaOutput,

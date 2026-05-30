@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from django.core.cache import cache
+from django.db import transaction
 
 from ..domain.exceptions import CapacidadAulaInvalidaError, GrupoSinDocenteError
 from ..domain.interfaces import IAulaRepository, IDocenteRepository, IGrupoRepository
@@ -109,7 +110,8 @@ class AcademicoService:
         )
 
     def carga_masiva_grupos(self, dto: CargaMasivaInputDTO) -> list[GrupoOutputDTO]:
-        return [self.crear_grupo(grupo) for grupo in dto.grupos]
+        with transaction.atomic():
+            return [self.crear_grupo(grupo) for grupo in dto.grupos]
 
     def obtener_docente(self, docente_id: UUID) -> DocenteOutputDTO | None:
         if self.docente_repo is None:
