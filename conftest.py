@@ -6,9 +6,7 @@ Proporciona:
 - Fixtures compartidas reutilizables entre todas las apps
 """
 
-import django
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Fixtures compartidas
@@ -28,8 +26,8 @@ def usuario_test(db):
     """Crea y retorna un usuario de prueba sin roles especiales."""
     from django.contrib.auth import get_user_model
 
-    User = get_user_model()
-    return User.objects.create_user(
+    user_model = get_user_model()
+    return user_model.objects.create_user(
         username="test_user",
         email="test@uco.edu.co",
         password="Test1234!",

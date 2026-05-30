@@ -125,7 +125,7 @@
   };
 
   const refreshLeaderCoverage = async (semestre) => {
-    const data = await fetchJson(`/api/asignacion/asignacion/cobertura/?semestre=${encodeURIComponent(semestre)}`);
+    const data = await fetchJson(`/api/asignacion/cobertura/?semestre=${encodeURIComponent(semestre)}`);
     const total = Number(data?.total_grupos || 0);
     const asignados = Number(data?.grupos_con_aula || 0);
     const percentage = total > 0 ? Math.round((asignados / total) * 100) : 0;
@@ -269,7 +269,7 @@
     renderOptions('leader-grupo-select', state.grupos, {
       placeholder: 'Selecciona un grupo',
       valueKey: 'id',
-      labelFn: (item) => `${item.codigo} - ${item.num_estudiantes} estudiantes`,
+      labelFn: (item) => `${item.codigo} - ${item.curso_nombre || 'Materia'} - ${item.num_estudiantes} estudiantes`,
     });
     renderOptions('leader-aula-select', state.aulas, {
       placeholder: 'Selecciona un aula',
@@ -287,7 +287,7 @@
       state.grupos
         .map(
           (grupo) =>
-            `<tr><td>${esc(grupo.codigo)}</td><td>${esc(grupo.num_estudiantes)}</td><td>${esc(grupo.semestre)}</td></tr>`
+            `<tr><td>${esc(grupo.codigo)}</td><td>${esc(grupo.curso_nombre || grupo.curso_codigo || '')}</td><td>${esc(grupo.num_estudiantes)}</td><td>${esc(grupo.semestre)}</td></tr>`
         )
         .join(''),
       'No hay grupos cargados'
@@ -308,12 +308,13 @@
   const bindLeader = () => {
     const execForm = document.getElementById('leader-exec-form');
     const simForm = document.getElementById('leader-sim-form');
+    const semesterAssignButton = document.getElementById('leader-semester-assign');
 
     execForm?.addEventListener('submit', async (evt) => {
       evt.preventDefault();
       const data = formDataObject(execForm);
       try {
-        const result = await postJson('/api/asignacion/asignacion/ejecutar/', data);
+        const result = await postJson('/api/asignacion/ejecutar/', data);
         showStatus('leader-exec-status', `Asignacion confirmada para ${result.semestre}.`, 'success');
         toast('success', 'Asignacion ejecutada correctamente.');
         await refreshLeaderCoverage(data.semestre);
@@ -326,33 +327,44 @@
     simForm?.addEventListener('submit', async (evt) => {
       evt.preventDefault();
       const data = formDataObject(simForm);
-      const payload = {
-        semestre: data.semestre,
-        grupos: state.grupos.map((grupo) => ({
-          id: grupo.id,
-          curso_id: grupo.curso_id,
-          docente_id: grupo.docente_id,
-          codigo: grupo.codigo,
-          num_estudiantes: grupo.num_estudiantes,
-          semestre: grupo.semestre,
-          bloque_horario_id: state.bloques[0]?.id || '',
-        })),
-        aulas: state.aulas.map((aula) => ({
-          id: aula.id,
-          nombre: aula.nombre,
-          capacidad: aula.capacidad,
-          tipo: aula.tipo,
-          disponible: aula.disponible,
-        })),
-      };
       try {
-        const result = await postJson('/api/asignacion/asignacion/simular/', payload);
-        showStatus('leader-sim-status', result.mensaje || 'Simulacion completada.', 'success');
+        const result = await postJson('/api/asignacion/simular-semestre/', {
+          semestre: data.semestre,
+        });
+        const asignables = result.asignaciones?.filter((item) => item.estado !== 'PENDIENTE').length || 0;
+        const pendientes = result.asignaciones?.filter((item) => item.estado === 'PENDIENTE').length || 0;
+        showStatus(
+          'leader-sim-status',
+          `${result.mensaje || 'Simulacion completada.'} Asignables: ${asignables}. Pendientes: ${pendientes}.`,
+          pendientes > 0 ? 'warning' : 'success'
+        );
         toast('success', 'Simulacion ejecutada.');
         await refreshLeaderCoverage(data.semestre);
       } catch (error) {
         showStatus('leader-sim-status', error.details || error.message, 'error');
         toast('error', error.details || 'No se pudo simular la asignacion.');
+      }
+    });
+
+    semesterAssignButton?.addEventListener('click', async () => {
+      const data = formDataObject(simForm);
+      try {
+        const result = await postJson('/api/asignacion/ejecutar-semestre/', {
+          semestre: data.semestre,
+        });
+        const pendientes = Number(result.grupos_pendientes || 0);
+        showStatus(
+          'leader-sim-status',
+          `${result.total_asignaciones || 0} grupos asignados. Pendientes: ${pendientes}.`,
+          pendientes > 0 ? 'warning' : 'success'
+        );
+        toast(pendientes > 0 ? 'warning' : 'success', 'Asignacion de semestre finalizada.');
+        await loadCatalog();
+        renderLeader();
+        await refreshLeaderCoverage(data.semestre);
+      } catch (error) {
+        showStatus('leader-sim-status', error.details || error.message, 'error');
+        toast('error', error.details || 'No se pudo asignar el semestre.');
       }
     });
   };
@@ -482,7 +494,7 @@
       state.grupos
         .map(
           (grupo) =>
-            `<tr><td>${esc(grupo.codigo)}</td><td>${esc(grupo.num_estudiantes)}</td><td>${esc(grupo.semestre)}</td></tr>`
+            `<tr><td>${esc(grupo.codigo)}</td><td>${esc(grupo.curso_nombre || grupo.curso_codigo || '')}</td><td>${esc(grupo.num_estudiantes)}</td><td>${esc(grupo.semestre)}</td></tr>`
         )
         .join(''),
       'No hay grupos registrados'
@@ -524,7 +536,7 @@
       state.grupos
         .map(
           (grupo) =>
-            `<tr><td>${esc(grupo.codigo)}</td><td>${esc(grupo.num_estudiantes)}</td><td>${esc(grupo.semestre)}</td><td><span class="badge ${grupo.activo ? 'badge-success' : 'badge-warning'}">${grupo.activo ? 'Activo' : 'Inactivo'}</span></td></tr>`
+            `<tr><td>${esc(grupo.codigo)}</td><td>${esc(grupo.curso_nombre || grupo.curso_codigo || '')}</td><td>${esc(grupo.num_estudiantes)}</td><td>${esc(grupo.semestre)}</td><td><span class="badge ${grupo.activo ? 'badge-success' : 'badge-warning'}">${grupo.activo ? 'Activo' : 'Inactivo'}</span></td></tr>`
         )
         .join(''),
       'No hay grupos cargados'

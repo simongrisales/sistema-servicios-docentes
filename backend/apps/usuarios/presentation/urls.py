@@ -30,5 +30,10 @@ urlpatterns = [
         UsuarioViewSet.as_view({"get": "roles", "post": "crear_rol"}),
         name="usuarios_roles_catalogo",
     ),
+    path(
+        "usuarios/roles/",
+        UsuarioViewSet.as_view({"get": "roles", "post": "crear_rol"}),
+        name="usuarios_roles",
+    ),
     *router.urls,
 ]

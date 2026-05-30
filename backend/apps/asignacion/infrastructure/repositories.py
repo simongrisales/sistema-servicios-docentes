@@ -52,6 +52,13 @@ class AsignacionRepository(
             estado="CONFIRMADO",
         ).exists()
 
+    def existe_grupo_asignado(self, grupo_id: str, semestre: str) -> bool:
+        return AsignacionModel.objects.filter(
+            grupo_id=grupo_id,
+            semestre=semestre,
+            estado="CONFIRMADO",
+        ).exists()
+
     @transaction.atomic
     def guardar(self, asignacion: Asignacion) -> Asignacion:
         try:

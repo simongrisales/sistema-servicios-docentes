@@ -67,9 +67,8 @@ class LoginPageView(TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        recaptcha_token = (
-            request.POST.get("recaptcha_token", "")
-            or request.POST.get("g-recaptcha-response", "")
+        recaptcha_token = request.POST.get("recaptcha_token", "") or request.POST.get(
+            "g-recaptcha-response", ""
         )
         username = request.POST.get("username", "")
         password = request.POST.get("password", "")
@@ -132,7 +131,9 @@ class LoginConRecaptchaView(TokenObtainPairView):
         )
 
         if recaptcha_token:
-            widget = ReCaptchaV2Checkbox() if settings.DEBUG else ReCaptchaV3(action="login")
+            widget = (
+                ReCaptchaV2Checkbox() if settings.DEBUG else ReCaptchaV3(action="login")
+            )
             field = ReCaptchaField(widget=widget)
             field.clean(recaptcha_token)
         return super().post(request, *args, **kwargs)

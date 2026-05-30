@@ -5,7 +5,12 @@ from rest_framework.response import Response
 
 from ..application.dtos import AulaInputDTO, GrupoInputDTO
 from ..application.use_cases import AcademicoService
-from ..infrastructure.models import CursoModel, DocenteModel, GrupoModel, HorarioBloqueModel
+from ..infrastructure.models import (
+    CursoModel,
+    DocenteModel,
+    GrupoModel,
+    HorarioBloqueModel,
+)
 from ..infrastructure.repositories import (
     AulaRepository,
     DocenteRepository,
@@ -63,14 +68,16 @@ class AcademicoViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="cursos")
     def cursos(self, request):
         cursos = (
-            CursoModel.objects.select_related("programa")
+            CursoModel.objects.select_related("programa", "programa__facultad")
             .filter(activo=True)
-            .order_by("nombre")
+            .order_by("programa__facultad__nombre", "codigo")
         )
         data = [
             {
                 "id": curso.id,
                 "programa_id": curso.programa_id,
+                "programa_nombre": curso.programa.nombre,
+                "facultad_nombre": curso.programa.facultad.nombre,
                 "codigo": curso.codigo,
                 "nombre": curso.nombre,
                 "creditos": curso.creditos,
@@ -79,27 +86,6 @@ class AcademicoViewSet(viewsets.ViewSet):
             for curso in cursos
         ]
         return Response(CursoOutputSerializer(data, many=True).data)
-
-    @action(detail=False, methods=["get"], url_path="grupos")
-    def grupos(self, request):
-        grupos = (
-            GrupoModel.objects.select_related("curso", "docente")
-            .filter(activo=True)
-            .order_by("semestre", "codigo")
-        )
-        data = [
-            {
-                "id": grupo.id,
-                "curso_id": grupo.curso_id,
-                "docente_id": grupo.docente_id,
-                "codigo": grupo.codigo,
-                "num_estudiantes": grupo.num_estudiantes,
-                "semestre": grupo.semestre,
-                "activo": grupo.activo,
-            }
-            for grupo in grupos
-        ]
-        return Response(GrupoOutputSerializer(data, many=True).data)
 
     @action(detail=False, methods=["get"], url_path="bloques")
     def bloques(self, request):
@@ -125,13 +111,16 @@ class AcademicoViewSet(viewsets.ViewSet):
             grupos = (
                 GrupoModel.objects.select_related("curso", "docente")
                 .filter(activo=True)
-                .order_by("semestre", "codigo")
+                .order_by("semestre", "curso__codigo", "codigo")
             )
             data = [
                 {
                     "id": grupo.id,
                     "curso_id": grupo.curso_id,
+                    "curso_codigo": grupo.curso.codigo,
+                    "curso_nombre": grupo.curso.nombre,
                     "docente_id": grupo.docente_id,
+                    "docente_nombre": grupo.docente.nombre,
                     "codigo": grupo.codigo,
                     "num_estudiantes": grupo.num_estudiantes,
                     "semestre": grupo.semestre,

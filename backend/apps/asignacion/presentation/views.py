@@ -52,6 +52,34 @@ class AsignacionViewSet(viewsets.ViewSet):
         )
         return Response(SerializacionResultadoAsignacion(resultado).data)
 
+    @action(detail=False, methods=["post"], url_path="simular-semestre")
+    def simular_semestre(self, request):
+        serializer = SerializacionSimulacion(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resultado = self._service().simular_asignacion(
+            SimulacionInputDTO(**serializer.validated_data)
+        )
+        return Response(SerializacionResultadoAsignacion(resultado).data)
+
+    @action(detail=False, methods=["post"], url_path="ejecutar-semestre")
+    def ejecutar_semestre(self, request):
+        if not EsAdministradorOLiderDOC().has_permission(request, self):
+            return Response(
+                {"detail": "No tiene permisos para ejecutar la asignacion."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        semestre = request.data.get("semestre", "")
+        if not semestre:
+            return Response(
+                {"detail": "El semestre es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        resultado = self._service().ejecutar_asignacion_automatica_semestre(semestre)
+        return Response(
+            SerializacionResultadoAsignacion(resultado).data,
+            status=status.HTTP_201_CREATED,
+        )
+
     @action(detail=False, methods=["get"], url_path="cobertura")
     def cobertura(self, request):
         resultado = self._service().verificar_cobertura_total(

@@ -14,6 +14,132 @@ ROLES = [
     ("admisiones", "Admisiones", "Actualizacion de cupos reales por grupo."),
 ]
 
+FACULTADES = [
+    ("ING", "Facultad de Ingeniería", "Ingeniería de Sistemas"),
+    ("SOC", "Facultad de Ciencias Sociales", "Ciencias Sociales"),
+    (
+        "ADM",
+        "Facultad de Ciencias Administrativas y Económicas",
+        "Administración y Economía",
+    ),
+    ("DER", "Facultad de Derecho", "Derecho"),
+    ("SAL", "Facultad de Ciencias de la Salud", "Ciencias de la Salud"),
+    (
+        "AGR",
+        "Facultad de Ciencias Agrarias y Ambientales",
+        "Ciencias Agrarias y Ambientales",
+    ),
+]
+
+CURSOS = {
+    "ING": [
+        ("ING101", "Programación I"),
+        ("ING102", "Programación II"),
+        ("ING103", "Bases de Datos"),
+        ("ING104", "Ingeniería de Software"),
+        ("ING105", "Arquitectura de Software"),
+        ("ING106", "Redes de Computadores"),
+        ("ING107", "Sistemas Operativos"),
+        ("ING108", "Inteligencia Artificial"),
+    ],
+    "SOC": [
+        ("SOC101", "Sociología General"),
+        ("SOC102", "Psicología Social"),
+        ("SOC103", "Antropología Cultural"),
+        ("SOC104", "Metodología de la Investigación"),
+        ("SOC105", "Comunicación Organizacional"),
+    ],
+    "ADM": [
+        ("ADM101", "Fundamentos de Administración"),
+        ("ADM102", "Contabilidad General"),
+        ("ADM103", "Gestión Financiera"),
+        ("ADM104", "Mercadeo Estratégico"),
+        ("ADM105", "Gestión del Talento Humano"),
+    ],
+    "DER": [
+        ("DER101", "Introducción al Derecho"),
+        ("DER102", "Derecho Constitucional"),
+        ("DER103", "Derecho Civil"),
+        ("DER104", "Derecho Laboral"),
+        ("DER105", "Derecho Comercial"),
+    ],
+    "SAL": [
+        ("SAL101", "Anatomía Humana"),
+        ("SAL102", "Fisiología"),
+        ("SAL103", "Bioquímica"),
+        ("SAL104", "Salud Pública"),
+        ("SAL105", "Enfermería Comunitaria"),
+    ],
+    "AGR": [
+        ("AGR101", "Producción Animal"),
+        ("AGR102", "Botánica General"),
+        ("AGR103", "Fertilidad de Suelos"),
+        ("AGR104", "Gestión Ambiental"),
+        ("AGR105", "Nutrición Animal"),
+    ],
+}
+
+GRUPOS_POR_CURSO = {
+    "ING101": [1, 2, 3, 4],
+    "ING102": [1, 2, 3],
+    "ING103": [1, 2, 3],
+    "ING104": [1, 2],
+    "ING105": [1],
+    "ING106": [1, 2],
+    "ING107": [1, 2],
+    "ING108": [1],
+    "SOC101": [1, 2],
+    "SOC102": [1],
+    "SOC103": [1],
+    "SOC104": [1, 2, 3],
+    "SOC105": [1],
+    "ADM101": [1, 2, 3],
+    "ADM102": [1, 2],
+    "ADM103": [1],
+    "ADM104": [1, 2],
+    "ADM105": [1],
+    "DER101": [1, 2],
+    "DER102": [1],
+    "DER103": [1, 2],
+    "DER104": [1],
+    "DER105": [1],
+    "SAL101": [1, 2],
+    "SAL102": [1],
+    "SAL103": [1],
+    "SAL104": [1, 2],
+    "SAL105": [1],
+    "AGR101": [1, 2],
+    "AGR102": [1],
+    "AGR103": [1],
+    "AGR104": [1, 2],
+    "AGR105": [1],
+}
+
+AULAS = [
+    *[(f"M20{i}", 35, "aula_regular", "Bloque M2") for i in range(1, 9)],
+    *[(f"M30{i}", 40, "aula_regular", "Bloque M3") for i in range(1, 9)],
+    *[(f"M40{i}", 45, "aula_regular", "Bloque M4") for i in range(1, 9)],
+    ("Aula Multimedia", 35, "sala_sistemas", "Aulas Especiales"),
+    ("Aula EDC", 30, "aula_regular", "Aulas Especiales"),
+    ("Laboratorio de Química", 28, "laboratorio", "Laboratorios"),
+    ("Laboratorio de Física", 28, "laboratorio", "Laboratorios"),
+    ("Laboratorio de Biología", 28, "laboratorio", "Laboratorios"),
+    ("Laboratorio de Zootecnia", 30, "laboratorio", "Laboratorios"),
+    ("Laboratorio de Enfermería", 30, "laboratorio", "Laboratorios"),
+    ("Sala de Valores InnovaMater", 25, "aula_regular", "Salas Especiales"),
+    *[(f"J{i}", 32, "aula_regular", "Bloque J") for i in range(1, 16)],
+    ("JPro", 24, "aula_regular", "Bloque J"),
+]
+
+HORARIOS = [
+    ("lunes", time(6, 0), time(8, 0)),
+    ("lunes", time(8, 0), time(10, 0)),
+    ("martes", time(8, 0), time(10, 0)),
+    ("miercoles", time(10, 0), time(12, 0)),
+    ("jueves", time(14, 0), time(16, 0)),
+    ("viernes", time(16, 0), time(18, 0)),
+]
+
 
 class Command(BaseCommand):
     help = "Crea roles, usuarios y datos academicos base para demo."
@@ -82,62 +208,83 @@ class Command(BaseCommand):
             "CatalogoParametroModel",
         )
 
-        facultad, _ = FacultadModel.objects.update_or_create(
-            codigo="ING",
-            defaults={"nombre": "Facultad de Ingenieria", "activa": True},
-        )
-        programa, _ = ProgramaModel.objects.update_or_create(
-            codigo="ISI",
-            defaults={
-                "nombre": "Ingenieria de Sistemas",
-                "facultad": facultad,
-                "activo": True,
-            },
-        )
-        curso, _ = CursoModel.objects.update_or_create(
-            codigo="ISW2",
-            defaults={
-                "nombre": "Ingenieria de Software II",
-                "programa": programa,
-                "creditos": 3,
-                "activo": True,
-            },
-        )
-        docente, _ = DocenteModel.objects.update_or_create(
-            email="docente.demo@uco.edu.co",
-            defaults={"nombre": "Docente Demo", "activo": True},
-        )
-        HorarioBloqueModel.objects.update_or_create(
-            dia="lunes",
-            hora_inicio=time(8, 0),
-            hora_fin=time(10, 0),
-            defaults={"activo": True},
-        )
-        for nombre, capacidad, tipo in [
-            ("Bloque 3 - Aula 204", 35, "aula_regular"),
-            ("Laboratorio Sistemas 1", 28, "sala_sistemas"),
-            ("Auditorio Principal", 120, "auditorio"),
-            ("Bloque 2 - Aula 108", 45, "aula_regular"),
-        ]:
+        programas = {}
+        cursos = {}
+        for codigo, nombre, programa_nombre in FACULTADES:
+            facultad, _ = FacultadModel.objects.update_or_create(
+                codigo=codigo,
+                defaults={"nombre": nombre, "activa": True},
+            )
+            programa, _ = ProgramaModel.objects.update_or_create(
+                codigo=f"{codigo}-GEN",
+                defaults={
+                    "nombre": programa_nombre,
+                    "facultad": facultad,
+                    "activo": True,
+                },
+            )
+            programas[codigo] = programa
+
+        docentes = {}
+        for codigo, nombre, _programa_nombre in FACULTADES:
+            docente, _ = DocenteModel.objects.update_or_create(
+                email=f"docente.{codigo.lower()}@uco.edu.co",
+                defaults={
+                    "nombre": f"Docente {nombre.replace('Facultad de ', '')}",
+                    "activo": True,
+                },
+            )
+            docentes[codigo] = docente
+
+        for facultad_codigo, cursos_facultad in CURSOS.items():
+            for curso_codigo, curso_nombre in cursos_facultad:
+                curso, _ = CursoModel.objects.update_or_create(
+                    codigo=curso_codigo,
+                    defaults={
+                        "nombre": curso_nombre,
+                        "programa": programas[facultad_codigo],
+                        "creditos": 3,
+                        "activo": True,
+                    },
+                )
+                cursos[curso_codigo] = curso
+
+        for dia, hora_inicio, hora_fin in HORARIOS:
+            HorarioBloqueModel.objects.update_or_create(
+                dia=dia,
+                hora_inicio=hora_inicio,
+                hora_fin=hora_fin,
+                defaults={"activo": True},
+            )
+
+        for nombre, capacidad, tipo, bloque in AULAS:
             AulaModel.objects.update_or_create(
                 nombre=nombre,
                 defaults={
                     "capacidad": capacidad,
                     "tipo": tipo,
                     "disponible": True,
+                    "restricciones": {"bloque": bloque},
                     "activa": True,
                 },
             )
-        GrupoModel.objects.update_or_create(
-            curso=curso,
-            codigo="01",
-            semestre="2026-1",
-            defaults={
-                "docente": docente,
-                "num_estudiantes": 32,
-                "activo": True,
-            },
-        )
+
+        for curso_codigo, numeros_grupo in GRUPOS_POR_CURSO.items():
+            facultad_codigo = curso_codigo[:3]
+            for numero in numeros_grupo:
+                GrupoModel.objects.update_or_create(
+                    curso=cursos[curso_codigo],
+                    codigo=f"{curso_codigo}-{numero:02d}",
+                    semestre="2026-1",
+                    defaults={
+                        "docente": docentes[facultad_codigo],
+                        "num_estudiantes": self._estudiantes_para_grupo(
+                            curso_codigo,
+                            numero,
+                        ),
+                        "activo": True,
+                    },
+                )
 
         parametros_seed = [
             {
@@ -180,3 +327,17 @@ class Command(BaseCommand):
                     "activo": p["activo"],
                 },
             )
+
+    @staticmethod
+    def _estudiantes_para_grupo(curso_codigo: str, numero: int) -> int:
+        base_por_facultad = {
+            "ING": 30,
+            "SOC": 26,
+            "ADM": 34,
+            "DER": 28,
+            "SAL": 24,
+            "AGR": 22,
+        }
+        base = base_por_facultad.get(curso_codigo[:3], 25)
+        ajuste = (sum(ord(char) for char in curso_codigo) + numero * 7) % 12
+        return base + ajuste

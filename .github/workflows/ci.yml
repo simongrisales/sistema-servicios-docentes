@@ -64,16 +64,21 @@ jobs:
           python-version: "3.13"
 
       - name: Instalacion de dependencias
-        run: pip install -r requirements/dev.txt
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements/dev.txt
 
       - name: Ruff
-        run: ruff check backend/
+        run: python -m ruff check backend/ conftest.py
 
       - name: Black
-        run: black --check backend/
+        run: python -m black --check backend/ conftest.py
+
+      - name: Django check
+        run: python manage.py check
 
       - name: Pytest con coverage XML
-        run: pytest backend/ --cov=backend/ --cov-report=xml
+        run: python -m pytest backend/ --cov=backend/ --cov-report=xml
 
       - name: SonarQube scanner
         if: env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != ''
@@ -90,11 +95,18 @@ jobs:
 
       - name: Levantar Django para ZAP
         run: |
+          python manage.py migrate --noinput
+          python manage.py seed_base_data
           python manage.py runserver 0.0.0.0:8000 > django-ci.log 2>&1 &
-          sleep 15
+          for i in {1..30}; do
+            curl --fail http://localhost:8000/login/ && exit 0
+            sleep 2
+          done
+          cat django-ci.log
+          exit 1
 
       - name: OWASP ZAP scan
-        run: docker run --rm --network host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:8000
+        run: docker run --rm --network host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -I -t http://localhost:8000
 
       - name: Build de imagen Docker
         run: docker build -f backend/Dockerfile -t sistema-servicios-docentes:ci .

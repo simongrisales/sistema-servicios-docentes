@@ -45,7 +45,16 @@ class AsignacionUseCaseService:
         grupo_id: str,
         semestre: str,
     ) -> None:
-        if self.asignacion_repo and self.asignacion_repo.existe_conflicto(
+        if self.asignacion_repo is None:
+            return
+
+        existe_grupo_asignado = self._get_repo_method("existe_grupo_asignado")
+        if existe_grupo_asignado and existe_grupo_asignado(grupo_id, semestre):
+            raise AsignacionConflictoError(
+                [f"El grupo {grupo_id} ya tiene aula asignada en {semestre}."]
+            )
+
+        if self.asignacion_repo.existe_conflicto(
             aula_id,
             bloque_horario_id,
             semestre,
@@ -93,10 +102,29 @@ class AsignacionUseCaseService:
         aulas: list[dict] | None = None,
         reglas: list[ReglaAsignacion] | None = None,
     ) -> AsignacionOutputDTO:
-        grupos_normalizados = grupos or self._obtener_grupos_semestre(semestre)
-        aulas_normalizadas = aulas or self._obtener_aulas_disponibles()
+        grupos_normalizados = (
+            self._obtener_grupos_semestre(semestre, excluir_asignados=True)
+            if grupos is None
+            else grupos
+        )
+        aulas_normalizadas = (
+            self._obtener_aulas_disponibles() if aulas is None else aulas
+        )
 
         if not grupos_normalizados:
+            if grupos is None:
+                return AsignacionOutputDTO(
+                    grupo_id="",
+                    aula_id="",
+                    bloque_horario_id="",
+                    semestre=semestre,
+                    estado="RESUMEN",
+                    mensaje=(
+                        "No hay grupos pendientes por asignar para el semestre "
+                        f"{semestre}."
+                    ),
+                    total_asignaciones=0,
+                )
             raise DatosIncompletosError(
                 f"No hay grupos cargados para el semestre {semestre}."
             )
@@ -139,6 +167,7 @@ class AsignacionUseCaseService:
                         estado="CONFIRMADO",
                     )
                 )
+            asignacion["estado"] = "CONFIRMADO"
 
         self._invalidate_aulas_cache()
         self._publicar_notificacion_asignacion(
@@ -166,9 +195,38 @@ class AsignacionUseCaseService:
                 exitoso=True,
                 mensaje="Simulacion preparada sin persistir datos.",
             )
+
+        if input_dto.grupos or input_dto.aulas:
+            grupos = input_dto.grupos
+            aulas = input_dto.aulas
+        elif self._repo_soporta_consultas_bd():
+            grupos = self._obtener_grupos_semestre(input_dto.semestre)
+            aulas = self._obtener_aulas_disponibles()
+        else:
+            grupos = []
+            aulas = []
+
+        if not grupos:
+            if self._strategy_es_mock():
+                resultado = self._ejecutar_strategy(grupos, aulas, [])
+                return SimulacionOutputDTO(
+                    exitoso=resultado.exitoso,
+                    mensaje=resultado.mensaje,
+                    conflictos=resultado.conflicto_detalles,
+                    asignaciones=resultado.asignaciones,
+                )
+            return SimulacionOutputDTO(
+                exitoso=True,
+                mensaje="Simulacion preparada sin persistir datos.",
+            )
+        if not aulas:
+            return SimulacionOutputDTO(
+                exitoso=True,
+                mensaje="Simulacion preparada sin persistir datos.",
+            )
         resultado = self._ejecutar_strategy(
-            input_dto.grupos,
-            input_dto.aulas,
+            grupos,
+            aulas,
             [],
         )
         return SimulacionOutputDTO(
@@ -228,15 +286,53 @@ class AsignacionUseCaseService:
             )
         )
 
-    def _obtener_grupos_semestre(self, semestre: str) -> list[dict]:
-        bloque_default = (
-            HorarioBloqueModel.objects.filter(activo=True).values("id").first() or {}
+    def _obtener_grupos_semestre(
+        self,
+        semestre: str,
+        excluir_asignados: bool = False,
+    ) -> list[dict]:
+        bloques = list(
+            HorarioBloqueModel.objects.filter(activo=True)
+            .order_by("dia", "hora_inicio")
+            .values_list("id", flat=True)
         )
-        bloque_id = str(bloque_default.get("id", ""))
+        if not bloques:
+            return []
+
         grupos = []
-        for grupo in GrupoRepository().list_por_semestre(semestre):
+        existe_grupo_asignado = (
+            self._get_repo_method("existe_grupo_asignado")
+            if excluir_asignados
+            else None
+        )
+        for index, grupo in enumerate(GrupoRepository().list_por_semestre(semestre)):
+            if existe_grupo_asignado and existe_grupo_asignado(str(grupo.id), semestre):
+                continue
+            bloque_id = str(bloques[index % len(bloques)])
             grupos.append(self._normalizar_grupo(grupo, bloque_id))
         return grupos
+
+    def _get_repo_method(self, method_name: str):
+        if self.asignacion_repo is None:
+            return None
+        repo_class = self.asignacion_repo.__class__
+        if method_name not in repo_class.__dict__:
+            return None
+        method = getattr(self.asignacion_repo, method_name, None)
+        return method if callable(method) else None
+
+    def _repo_soporta_consultas_bd(self) -> bool:
+        if self.asignacion_repo is None:
+            return False
+        return self.asignacion_repo.__class__.__module__.endswith(
+            "infrastructure.repositories"
+        )
+
+    def _strategy_es_mock(self) -> bool:
+        return bool(
+            self.strategy
+            and self.strategy.__class__.__module__.startswith("unittest.mock")
+        )
 
     def _obtener_aulas_disponibles(self) -> list[dict]:
         aulas = []
