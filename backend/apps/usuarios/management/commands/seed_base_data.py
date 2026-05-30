@@ -180,7 +180,7 @@ class Command(BaseCommand):
             ("admisiones", "admisiones@uco.edu.co", "admisiones", "Admisiones"),
         ]
         for username, email, role_code, departamento in ejemplos:
-            user, created = user_model.objects.get_or_create(
+            user, _created = user_model.objects.update_or_create(
                 username=username,
                 defaults={
                     "email": email,
@@ -189,11 +189,11 @@ class Command(BaseCommand):
                     "cargo": roles[role_code].name,
                     "is_staff": role_code == "administrador",
                     "is_superuser": role_code == "administrador",
+                    "is_active": True,
                 },
             )
-            if created:
-                user.set_password("UcoDemo2026*")
-                user.save()
+            user.set_password("UcoDemo2026*")
+            user.save(update_fields=["password"])
 
     def _crear_datos_academicos(self) -> None:
         FacultadModel = apps.get_model("academico", "FacultadModel")
