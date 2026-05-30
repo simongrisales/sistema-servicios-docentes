@@ -4,5 +4,11 @@
         <strong>Notificacion</strong>
         <p id="notification-toast-message"></p>
     </div>
-    <button class="toast-close" type="button" data-toast-close aria-label="Cerrar">&times;</button>
+    <button
+        class="toast-close"
+        type="button"
+        data-toast-close
+        aria-label="Cerrar"
+        onclick="window.hideToast && window.hideToast(); return false;"
+    >&times;</button>
 </div>

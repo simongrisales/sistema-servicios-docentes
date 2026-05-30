@@ -7,6 +7,11 @@ from apps.usuarios.infrastructure.permissions import EsAdministradorOLiderDOC
 
 from ..application.dtos import AsignacionInputDTO, SimulacionInputDTO
 from ..application.use_cases import AsignacionUseCaseService
+from ..domain.exceptions import (
+    AsignacionConflictoError,
+    CapacidadInsuficienteError,
+    DatosIncompletosError,
+)
 from ..infrastructure.repositories import AsignacionRepository
 from ..infrastructure.strategies import PrioridadEstudiantesStrategy
 from .serializers import (
@@ -26,6 +31,29 @@ class AsignacionViewSet(viewsets.ViewSet):
             strategy=PrioridadEstudiantesStrategy(),
         )
 
+    @staticmethod
+    def _error_response(error: Exception) -> Response:
+        if isinstance(error, AsignacionConflictoError):
+            details = getattr(error, "detalles_conflicto", None) or [str(error)]
+            return Response(
+                {"detail": details[0], "detalles": details},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if isinstance(error, CapacidadInsuficienteError):
+            return Response(
+                {"detail": str(error) or "Capacidad insuficiente."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if isinstance(error, DatosIncompletosError):
+            return Response(
+                {"detail": str(error) or "Faltan datos para ejecutar la asignacion."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {"detail": "No fue posible completar la operacion."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
     @action(detail=False, methods=["post"], url_path="ejecutar")
     def ejecutar(self, request):
         serializer = SerializacionAsignacion(data=request.data)
@@ -35,9 +63,16 @@ class AsignacionViewSet(viewsets.ViewSet):
                 {"detail": "No tiene permisos para ejecutar la asignacion."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        resultado = self._service().ejecutar_asignacion_automatica(
-            AsignacionInputDTO(**serializer.validated_data)
-        )
+        try:
+            resultado = self._service().ejecutar_asignacion_automatica(
+                AsignacionInputDTO(**serializer.validated_data)
+            )
+        except (
+            AsignacionConflictoError,
+            CapacidadInsuficienteError,
+            DatosIncompletosError,
+        ) as error:
+            return self._error_response(error)
         return Response(
             SerializacionResultadoAsignacion(resultado).data,
             status=status.HTTP_201_CREATED,
@@ -74,7 +109,16 @@ class AsignacionViewSet(viewsets.ViewSet):
                 {"detail": "El semestre es obligatorio."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        resultado = self._service().ejecutar_asignacion_automatica_semestre(semestre)
+        try:
+            resultado = self._service().ejecutar_asignacion_automatica_semestre(
+                semestre
+            )
+        except (
+            AsignacionConflictoError,
+            CapacidadInsuficienteError,
+            DatosIncompletosError,
+        ) as error:
+            return self._error_response(error)
         return Response(
             SerializacionResultadoAsignacion(resultado).data,
             status=status.HTTP_201_CREATED,

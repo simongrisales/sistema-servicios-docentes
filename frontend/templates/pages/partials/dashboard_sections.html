@@ -37,7 +37,7 @@
             </div>
             <div class="stack">
                 {% for action in quick_actions %}
-                <a class="btn btn-primary" href="{{ action.href }}">{{ action.label }}</a>
+                <a class="btn btn-primary" href="{{ action.href }}" data-quick-action>{{ action.label }}</a>
                 {% endfor %}
             </div>
             <div class="alert alert-warning" style="margin-top: 1rem;">
@@ -445,6 +445,19 @@
                     <p class="card-subtitle">Aulas</p>
                     <h3 class="card-title">Capacidad y disponibilidad</h3>
                 </div>
+            </div>
+            <div class="stack" style="margin-bottom: 0.85rem;">
+                <input
+                    class="input"
+                    id="aux-aula-filter"
+                    type="search"
+                    placeholder="Filtrar aulas por nombre, capacidad o estado"
+                    aria-label="Filtrar aulas"
+                >
+                <div class="hero-actions" style="justify-content: flex-start;">
+                    <button class="btn btn-ghost" type="button" id="aux-aula-filter-clear">Limpiar filtro</button>
+                </div>
+                <p class="support-note">La busqueda actualiza la tabla al escribir para ayudarte en tiempo real.</p>
             </div>
             <div class="table-wrap">
                 <table class="table">

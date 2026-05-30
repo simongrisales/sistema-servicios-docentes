@@ -164,6 +164,10 @@ body.uco-shell {
     gap: 0.8rem;
 }
 
+.navbar-menu-group {
+    position: relative;
+}
+
 .nav-link, .btn {
     display: inline-flex;
     align-items: center;
@@ -240,6 +244,45 @@ body.uco-shell {
     align-items: center;
     gap: 0.75rem;
     padding: 0.45rem 0.75rem;
+    cursor: pointer;
+}
+
+.navbar-menu {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    right: 0;
+    min-width: 280px;
+    padding: 0.95rem;
+    border-radius: 1rem;
+    border: 1px solid var(--line);
+    background: rgba(8, 15, 27, 0.98);
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 0.55rem;
+    z-index: 35;
+}
+
+.navbar-menu[hidden] {
+    display: none;
+}
+
+.navbar-menu__eyebrow {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.navbar-menu__description {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.navbar-menu__action {
+    width: 100%;
+    justify-content: flex-start;
 }
 
 .user-chip__avatar {

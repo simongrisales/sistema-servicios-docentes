@@ -6,6 +6,47 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    const navbarMenuButtons = Array.from(document.querySelectorAll("[data-navbar-menu-toggle]"));
+    const navbarMenus = Array.from(document.querySelectorAll("[data-navbar-menu]"));
+
+    const closeNavbarMenus = () => {
+        navbarMenuButtons.forEach((button) => {
+            button.setAttribute("aria-expanded", "false");
+        });
+        navbarMenus.forEach((menu) => {
+            menu.hidden = true;
+        });
+    };
+
+    const openNavbarMenu = (menuName) => {
+        navbarMenus.forEach((menu) => {
+            menu.hidden = menu.dataset.navbarMenu !== menuName;
+        });
+        navbarMenuButtons.forEach((button) => {
+            button.setAttribute(
+                "aria-expanded",
+                button.dataset.navbarMenuToggle === menuName ? "true" : "false"
+            );
+        });
+    };
+
+    navbarMenuButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            const menuName = button.dataset.navbarMenuToggle;
+            const targetMenu = navbarMenus.find((menu) => menu.dataset.navbarMenu === menuName);
+            if (!targetMenu) {
+                return;
+            }
+
+            const shouldOpen = targetMenu.hidden;
+            closeNavbarMenus();
+            if (shouldOpen) {
+                openNavbarMenu(menuName);
+            }
+        });
+    });
+
     const sidebarLinks = Array.from(document.querySelectorAll(".sidebar-link[href^='#']"));
     const syncSidebarActive = () => {
         if (!sidebarLinks.length) {
@@ -56,16 +97,78 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Soporta deep-link por hash: #form o #calendar
     if (window.location.hash) {
-        const hash = window.location.hash.replace('#', '');
+        const hash = window.location.hash.replace("#", "");
         if (hash) setView(hash);
     }
 
+    const focusTargetForQuickAction = (hash) => {
+        if (!hash || hash.charAt(0) !== "#") {
+            return;
+        }
+
+        const target = document.querySelector(hash);
+        if (!target) {
+            return;
+        }
+
+        if (typeof target.scrollIntoView === "function") {
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        const preferredFocus =
+            target.querySelector("input, select, textarea, button") ||
+            target.parentElement?.querySelector("input, select, textarea, button");
+        if (preferredFocus && typeof preferredFocus.focus === "function") {
+            window.setTimeout(() => preferredFocus.focus({ preventScroll: true }), 120);
+        }
+    };
 
     document.addEventListener("click", (event) => {
+        const quickAction = event.target.closest?.("[data-quick-action]");
+        if (quickAction) {
+            const href = quickAction.getAttribute("href") || "";
+            if (href.startsWith("#")) {
+                event.preventDefault();
+                window.location.hash = href;
+                focusTargetForQuickAction(href);
+            }
+        }
+
         const closeButton = event.target.closest?.("[data-toast-close]");
         if (closeButton) {
+            event.preventDefault();
             window.hideToast();
+            return;
         }
+
+        const insideNavbar = event.target.closest?.("[data-navbar-menu], [data-navbar-menu-toggle]");
+        if (!insideNavbar) {
+            closeNavbarMenus();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeNavbarMenus();
+        }
+    });
+
+    document.querySelectorAll("[data-navbar-refresh]").forEach((button) => {
+        button.addEventListener("click", () => {
+            closeNavbarMenus();
+            window.dispatchEvent(
+                new CustomEvent("sds:catalog-changed", {
+                    detail: { tipo: "refresh_manual" },
+                })
+            );
+        });
+    });
+
+    document.querySelectorAll("[data-toast-close]").forEach((button) => {
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            window.hideToast();
+        });
     });
 });
 
@@ -88,6 +191,10 @@ window.showToast = function (data) {
 
 window.hideToast = function () {
     const toast = document.getElementById("notification-toast");
+    if (window.toastTimer) {
+        window.clearTimeout(window.toastTimer);
+        window.toastTimer = null;
+    }
     if (toast) {
         toast.hidden = true;
     }

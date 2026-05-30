@@ -94,6 +94,12 @@
     return field ? field.checked : false;
   };
 
+  const normalizeText = (value) =>
+    String(value ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
   const formDataObject = (form) => {
     const data = {};
     const fd = new FormData(form);
@@ -410,6 +416,18 @@
   };
 
   const renderAuxiliar = () => {
+    const aulaFilter = normalizeText(document.getElementById('aux-aula-filter')?.value || '');
+    const aulasFiltradas = aulaFilter
+      ? state.aulas.filter((aula) => {
+          const haystack = normalizeText(
+            [aula.nombre, aula.capacidad, aula.tipo, aula.disponible ? 'disponible' : 'ocupada']
+              .filter(Boolean)
+              .join(' ')
+          );
+          return haystack.includes(aulaFilter);
+        })
+      : state.aulas;
+
     renderOptions('aux-reserva-aula', state.aulas, {
       placeholder: 'Selecciona un aula',
       valueKey: 'id',
@@ -424,13 +442,13 @@
 
     renderTable(
       'aux-aulas-body',
-      state.aulas
+      aulasFiltradas
         .map(
           (aula) =>
             `<tr><td>${esc(aula.nombre)}</td><td>${esc(aula.capacidad)}</td><td><span class="badge ${aula.disponible ? 'badge-success' : 'badge-warning'}">${aula.disponible ? 'Disponible' : 'Ocupada'}</span></td></tr>`
         )
         .join(''),
-      'No hay aulas registradas'
+      aulaFilter ? 'No hay aulas que coincidan con el filtro' : 'No hay aulas registradas'
     );
 
     renderTable(
@@ -487,6 +505,21 @@
     if (auxiliarBound) return;
     auxiliarBound = true;
     const form = document.getElementById('aux-reserva-form');
+    const aulaFilter = document.getElementById('aux-aula-filter');
+    const clearFilter = document.getElementById('aux-aula-filter-clear');
+
+    aulaFilter?.addEventListener('input', () => {
+      renderAuxiliar();
+    });
+
+    clearFilter?.addEventListener('click', () => {
+      if (aulaFilter) {
+        aulaFilter.value = '';
+      }
+      renderAuxiliar();
+      aulaFilter?.focus();
+    });
+
     form?.addEventListener('submit', async (evt) => {
       evt.preventDefault();
       const data = formDataObject(form);

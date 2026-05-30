@@ -254,6 +254,15 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user_role = (getattr(self.request.user, "role_code", "") or "").lower()
+        primary_anchor_by_role = {
+            "administrador": "#admin-logs",
+            "lider_sd": "#leader-reportes",
+            "lider_doc": "#leader-reportes",
+            "auxiliar_sd": "#aux-reservas",
+            "auxiliar_doc": "#aux-reservas",
+            "facultad": "#faculty-grupos",
+            "admisiones": "#admissions-validacion",
+        }
         notifications_count = 0
         if getattr(self.request.user, "is_authenticated", False):
             notifications_count = NotificacionModel.objects.filter(
@@ -272,6 +281,9 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
                 "dashboard_user_id": getattr(self.request.user, "id", ""),
                 "dashboard_sidebar_items": self.sidebar_items,
                 "dashboard_notifications_count": notifications_count,
+                "dashboard_primary_anchor": primary_anchor_by_role.get(
+                    user_role, "#main-app"
+                ),
                 "grafana_url": f"http://localhost:{settings.GRAFANA_PORT}",
                 "prometheus_url": f"http://localhost:{settings.PROMETHEUS_PORT}",
                 "stats_cards": self.stats_cards,
