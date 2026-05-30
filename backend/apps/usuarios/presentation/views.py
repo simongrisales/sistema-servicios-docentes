@@ -62,7 +62,11 @@ def _validate_recaptcha_or_raise(token: str, widget_factory) -> None:
     try:
         field.clean(token)
     except ValidationError as exc:
-        message = exc.messages[0] if getattr(exc, "messages", None) else _("Captcha invalido.")
+        message = (
+            exc.messages[0]
+            if getattr(exc, "messages", None)
+            else _("Captcha invalido.")
+        )
         raise ValueError(message) from exc
 
 
@@ -154,9 +158,11 @@ class LoginConRecaptchaView(TokenObtainPairView):
         try:
             _validate_recaptcha_or_raise(
                 recaptcha_token,
-                lambda: ReCaptchaV2Checkbox()
-                if settings.DEBUG
-                else ReCaptchaV3(action="login"),
+                lambda: (
+                    ReCaptchaV2Checkbox()
+                    if settings.DEBUG
+                    else ReCaptchaV3(action="login")
+                ),
             )
         except ValueError as exc:
             return Response(
@@ -487,7 +493,9 @@ class LiderDocDashboardView(BaseDashboardView):
         _(
             "El boton principal debe usar confirmacion antes de ejecutar la asignacion real."
         ),
-        _("La barra de progreso se actualiza en tiempo real con los eventos del proceso."),
+        _(
+            "La barra de progreso se actualiza en tiempo real con los eventos del proceso."
+        ),
     ]
 
 

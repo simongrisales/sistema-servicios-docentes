@@ -25,7 +25,9 @@ def broadcast_notification_created(
         payload["unread_count"] = unread_count
 
     try:
-        async_to_sync(channel_layer.group_send)(f"notificaciones_usuario_{user_id}", payload)
+        async_to_sync(channel_layer.group_send)(
+            f"notificaciones_usuario_{user_id}", payload
+        )
     except Exception:
         return
 

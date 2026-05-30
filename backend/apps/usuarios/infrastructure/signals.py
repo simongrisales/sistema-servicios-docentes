@@ -7,7 +7,9 @@ from .models import RoleModel, UsuarioModel
 
 
 @receiver(post_save, sender=UsuarioModel)
-def broadcast_usuario_sync(sender, instance: UsuarioModel, created: bool, **kwargs) -> None:
+def broadcast_usuario_sync(
+    sender, instance: UsuarioModel, created: bool, **kwargs
+) -> None:
     accion = "creado" if created else "actualizado"
     broadcast_panel_sync(
         entidad="usuarios",
