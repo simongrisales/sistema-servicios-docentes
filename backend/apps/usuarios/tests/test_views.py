@@ -184,3 +184,13 @@ class UsuariosViewsTests(APITestCase):
                 assert response.url == ROLE_DASHBOARD_PATHS[role_code]
                 assert forbidden_dashboard.status_code == status.HTTP_302_FOUND
                 assert forbidden_dashboard.url == ROLE_DASHBOARD_PATHS[role_code]
+
+    def test_dashboard_muestra_cierre_de_sesion_visible(self):
+        user = self._create_user("admin_nav", RolSistema.ADMINISTRADOR)
+        self.client.force_login(user)
+
+        response = self.client.get("/dashboard/administrador/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "/logout/" in response.content.decode()
+        assert "Cerrar sesion" in response.content.decode()
