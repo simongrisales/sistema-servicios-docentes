@@ -7,12 +7,12 @@ from rest_framework.response import Response
 from ..application.dtos import AulaInputDTO, GrupoInputDTO
 from ..application.use_cases import AcademicoService
 from ..infrastructure.models import (
+    AulaModel,
     CursoModel,
     DocenteModel,
+    FacultadModel,
     GrupoModel,
     HorarioBloqueModel,
-    AulaModel,
-    FacultadModel,
     ProgramaModel,
 )
 from ..infrastructure.repositories import (
@@ -21,15 +21,15 @@ from ..infrastructure.repositories import (
     GrupoRepository,
 )
 from .serializers import (
+    AulaBusquedaSerializer,
+    AulaEstadoSerializer,
     AulaInputSerializer,
     AulaOutputSerializer,
-    AulaEstadoSerializer,
-    AulaBusquedaSerializer,
     CursoOutputSerializer,
     DocenteOutputSerializer,
+    FacultadOutputSerializer,
     GrupoOutputSerializer,
     GrupoSerializer,
-    FacultadOutputSerializer,
     ProgramaOutputSerializer,
 )
 
