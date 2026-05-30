@@ -37,28 +37,9 @@ env:
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 jobs:
-  unit_tests:
-    name: Unit Tests
+  lint:
+    name: Lint and Checks
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: sistema_servicios_docentes
-          POSTGRES_USER: servicios_docentes
-          POSTGRES_PASSWORD: servicios_docentes
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U servicios_docentes -d sistema_servicios_docentes"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      valkey:
-        image: valkey/valkey:8-alpine
-        ports:
-          - 6379:6379
-
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
@@ -83,21 +64,179 @@ jobs:
       - name: Django check
         run: python manage.py check
 
-      - name: Pytest unitario con coverage
-        run: python -m pytest backend/ --cov=backend/ --cov-report=xml --junitxml=junit-unit.xml
+  domain_tests:
+    name: Domain Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: sistema_servicios_docentes
+          POSTGRES_USER: servicios_docentes
+          POSTGRES_PASSWORD: servicios_docentes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U servicios_docentes -d sistema_servicios_docentes"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
 
-      - name: Subir cobertura y reportes
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalacion de dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements/dev.txt
+
+      - name: Testeo de dominio
+        run: >
+          python -m pytest
+          backend/core/tests
+          backend/apps/usuarios/tests/test_domain.py
+          backend/apps/academico/tests/test_domain.py
+          backend/apps/asignacion/tests/test_domain.py
+          backend/apps/reservas/tests/test_domain.py
+          backend/apps/reportes/tests/test_domain.py
+          backend/apps/parametros/tests/test_domain.py
+          --junitxml=junit-domain.xml
+
+      - name: Subir reporte de dominio
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-artifacts
-          path: |
-            coverage.xml
-            junit-unit.xml
+          name: domain-test-artifacts
+          path: junit-domain.xml
+
+  application_tests:
+    name: Application Tests
+    needs: domain_tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: sistema_servicios_docentes
+          POSTGRES_USER: servicios_docentes
+          POSTGRES_PASSWORD: servicios_docentes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U servicios_docentes -d sistema_servicios_docentes"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalacion de dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements/dev.txt
+
+      - name: Testeo de casos de uso
+        run: >
+          python -m pytest
+          backend/apps/usuarios/tests/test_use_cases.py
+          backend/apps/usuarios/tests/test_seed_base_data.py
+          backend/apps/academico/tests/test_use_cases.py
+          backend/apps/asignacion/tests/test_use_cases.py
+          backend/apps/reservas/tests/test_use_cases.py
+          backend/apps/reportes/tests/test_use_cases.py
+          backend/apps/parametros/tests/test_use_cases.py
+          backend/apps/notificaciones/tests/test_consumers.py
+          --junitxml=junit-application.xml
+
+      - name: Subir reporte de aplicacion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-test-artifacts
+          path: junit-application.xml
+
+  api_ui_tests:
+    name: API and UI Tests
+    needs: application_tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: sistema_servicios_docentes
+          POSTGRES_USER: servicios_docentes
+          POSTGRES_PASSWORD: servicios_docentes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U servicios_docentes -d sistema_servicios_docentes"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalacion de dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements/dev.txt
+
+      - name: Tests de API y frontend
+        run: >
+          python -m pytest
+          backend/apps/usuarios/tests/test_views.py
+          backend/apps/academico/tests/test_views.py
+          backend/apps/asignacion/tests/test_views.py
+          backend/apps/reservas/tests/test_views.py
+          backend/apps/reportes/tests/test_views.py
+          backend/apps/parametros/tests/test_views.py
+          backend/tests/test_config.py
+          backend/tests/test_frontend_pages.py
+          --junitxml=junit-api-ui.xml
+
+      - name: Subir reporte de API y UI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-ui-test-artifacts
+          path: junit-api-ui.xml
 
   smoke_tests:
     name: Smoke Tests
-    needs: unit_tests
+    needs: api_ui_tests
     runs-on: ubuntu-latest
     services:
       postgres:

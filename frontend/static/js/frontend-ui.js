@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const navbarMenuButtons = Array.from(document.querySelectorAll("[data-navbar-menu-toggle]"));
     const navbarMenus = Array.from(document.querySelectorAll("[data-navbar-menu]"));
+    const notificationBadge = document.getElementById("notification-count-badge");
 
     const closeNavbarMenus = () => {
         navbarMenuButtons.forEach((button) => {
@@ -28,6 +29,88 @@ document.addEventListener("DOMContentLoaded", function () {
                 button.dataset.navbarMenuToggle === menuName ? "true" : "false"
             );
         });
+    };
+
+    const initCollapsibleCards = () => {
+        const cards = Array.from(document.querySelectorAll(".dashboard-shell .card"));
+        cards.forEach((card, index) => {
+            if (card.classList.contains("metric-card")) {
+                return;
+            }
+
+            if (card.dataset.collapseReady === "true") {
+                return;
+            }
+
+            const header = card.querySelector(".card-header");
+            const hasMeaningfulContent = card.querySelector("form, table, .stack, .alert, .table-wrap");
+            if (!header || !hasMeaningfulContent) {
+                return;
+            }
+
+            card.dataset.collapseReady = "true";
+            const storageKey = `sds-card-collapse:${card.id || index}`;
+            const toggle = document.createElement("button");
+            toggle.type = "button";
+            toggle.className = "card-collapse-toggle";
+            toggle.setAttribute("aria-expanded", "true");
+
+            const applyState = (collapsed) => {
+                card.classList.toggle("is-collapsed", collapsed);
+                toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+                toggle.textContent = collapsed ? "Mostrar" : "Ocultar";
+                try {
+                    window.localStorage.setItem(storageKey, collapsed ? "1" : "0");
+                } catch (_) {
+                    // No-op: el panel sigue funcionando aunque no haya storage.
+                }
+            };
+
+            toggle.addEventListener("click", () => {
+                applyState(!card.classList.contains("is-collapsed"));
+            });
+
+            const label = card.querySelector(".card-title")?.textContent?.trim() || "Seccion";
+            toggle.setAttribute("aria-label", `Ocultar o mostrar ${label}`);
+            header.appendChild(toggle);
+
+            let collapsed = false;
+            try {
+                collapsed = window.localStorage.getItem(storageKey) === "1";
+            } catch (_) {
+                collapsed = false;
+            }
+            applyState(collapsed);
+        });
+    };
+
+    const getNotificationCount = () => {
+        if (!notificationBadge) {
+            return 0;
+        }
+        return Number.parseInt(notificationBadge.textContent || "0", 10) || 0;
+    };
+
+    const setNotificationCount = (nextCount) => {
+        if (!notificationBadge) {
+            return;
+        }
+        notificationBadge.textContent = String(Math.max(0, Number.parseInt(nextCount, 10) || 0));
+    };
+
+    const ensureNotificationEmptyState = () => {
+        const menu = document.getElementById("navbar-notifications-menu");
+        if (!menu || menu.querySelector("[data-notification-empty]")) {
+            return;
+        }
+
+        const emptyState = document.createElement("p");
+        emptyState.className = "navbar-notification-empty";
+        emptyState.dataset.notificationEmpty = "true";
+        emptyState.textContent = "Sin notificaciones nuevas.";
+
+        const firstAction = menu.querySelector(".navbar-menu__action");
+        menu.insertBefore(emptyState, firstAction || null);
     };
 
     navbarMenuButtons.forEach((button) => {
@@ -141,6 +224,40 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        const deleteButton = event.target.closest?.("[data-notification-delete]");
+        if (deleteButton) {
+            event.preventDefault();
+
+            const notificationId = deleteButton.getAttribute("data-notification-delete");
+            if (!notificationId || !window.sds?.apiClient?.del) {
+                return;
+            }
+
+            deleteButton.disabled = true;
+            window.sds.apiClient
+                .del(`/api/notificaciones/${notificationId}/`)
+                .then(() => {
+                    const item = deleteButton.closest?.("[data-notification-item]");
+                    if (item) {
+                        item.remove();
+                    }
+
+                    setNotificationCount(getNotificationCount() - 1);
+
+                    if (!document.querySelector("[data-notification-item]")) {
+                        ensureNotificationEmptyState();
+                    }
+                })
+                .catch(() => {
+                    deleteButton.disabled = false;
+                    window.sds?.toast?.show?.({
+                        type: "error",
+                        message: "No fue posible eliminar la notificacion.",
+                    });
+                });
+            return;
+        }
+
         const insideNavbar = event.target.closest?.("[data-navbar-menu], [data-navbar-menu-toggle]");
         if (!insideNavbar) {
             closeNavbarMenus();
@@ -170,6 +287,8 @@ document.addEventListener("DOMContentLoaded", function () {
             window.hideToast();
         });
     });
+
+    initCollapsibleCards();
 });
 
 window.showToast = function (data) {

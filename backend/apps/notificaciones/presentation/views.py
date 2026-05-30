@@ -4,7 +4,11 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from ..application.dtos import CrearNotificacionInputDTO, MarcarLeidaInputDTO
+from ..application.dtos import (
+    CrearNotificacionInputDTO,
+    EliminarNotificacionInputDTO,
+    MarcarLeidaInputDTO,
+)
 from ..application.use_cases import NotificacionService
 from .serializers import (
     CrearNotificacionSerializer,
@@ -58,6 +62,20 @@ class NotificacionesViewSet(viewsets.ViewSet):
         if not was_updated:
             return Response(
                 {"detail": "Notificacion no encontrada o ya estaba leida."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def destroy(self, request, pk=None):
+        deleted = self.get_service().eliminar_notificacion(
+            EliminarNotificacionInputDTO(
+                notificacion_id=str(pk),
+                user_id=str(request.user.pk),
+            )
+        )
+        if not deleted:
+            return Response(
+                {"detail": "Notificacion no encontrada o no pertenece al usuario."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -5,6 +5,7 @@ from ..domain.exceptions import TipoNotificacionInvalidoError
 from ..domain.interfaces import INotificacionRepository
 from .dtos import (
     CrearNotificacionInputDTO,
+    EliminarNotificacionInputDTO,
     MarcarLeidaInputDTO,
     NotificacionOutputDTO,
 )
@@ -53,6 +54,17 @@ class NotificacionService:
         if self.repo is None:
             return False
         return self.repo.mark_as_read(input_dto.notificacion_id, input_dto.user_id)
+
+    def eliminar_notificacion(self, input_dto: EliminarNotificacionInputDTO) -> bool:
+        if self.repo is None:
+            return False
+
+        notification = self.repo.get_by_id(input_dto.notificacion_id)
+        if notification is None or notification.usuario_destino_id != input_dto.user_id:
+            return False
+
+        self.repo.delete(input_dto.notificacion_id)
+        return True
 
     def _to_output_list(
         self, notifications: Iterable[Notificacion]

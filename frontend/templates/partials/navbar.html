@@ -20,8 +20,10 @@
     </div>
 
     <div class="navbar-meta">
+        {% if dashboard_show_metrics %}
         <a class="nav-link nav-link-ghost" href="{{ prometheus_url|default:'#' }}" target="_blank" rel="noreferrer">Prometheus</a>
         <a class="nav-link nav-link-ghost" href="{{ grafana_url|default:'#' }}" target="_blank" rel="noreferrer">Grafana</a>
+        {% endif %}
 
         {% if request.user.is_authenticated %}
         <div class="navbar-menu-group">
@@ -40,6 +42,29 @@
                 <p class="navbar-menu__eyebrow">Notificaciones</p>
                 <strong>{{ dashboard_notifications_count|default:0 }} mensajes pendientes</strong>
                 <p class="navbar-menu__description">Revisa los cambios recientes y refresca el panel sin recargar la pagina.</p>
+                {% if dashboard_notifications %}
+                <div class="navbar-notification-list" data-notification-list>
+                    {% for notification in dashboard_notifications %}
+                    <div class="navbar-notification-item" data-notification-item data-notification-id="{{ notification.id }}">
+                        <div class="navbar-notification-item__body">
+                            <p class="navbar-notification-item__title">{{ notification.titulo }}</p>
+                            <p class="navbar-notification-item__message">{{ notification.mensaje }}</p>
+                            <p class="navbar-notification-item__meta">{{ notification.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <button
+                            class="navbar-notification-delete"
+                            type="button"
+                            data-notification-delete="{{ notification.id }}"
+                            aria-label="Eliminar notificacion {{ notification.titulo }}"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="navbar-notification-empty" data-notification-empty>Sin notificaciones nuevas.</p>
+                {% endif %}
                 <a class="nav-link nav-link-ghost navbar-menu__action" href="{{ dashboard_primary_anchor|default:'#main-app' }}">Ir a mi panel</a>
                 <button class="nav-link nav-link-ghost navbar-menu__action" type="button" data-navbar-refresh>Actualizar panel</button>
             </div>

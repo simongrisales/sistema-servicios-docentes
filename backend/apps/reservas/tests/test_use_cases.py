@@ -48,7 +48,7 @@ class FakeReservaRepository:
 
 
 def _reserva() -> Reserva:
-    now = timezone.now()
+    now = timezone.now() + timedelta(minutes=5)
     return Reserva.crear(
         reserva_id="r1",
         aula_id="a1",
@@ -61,7 +61,7 @@ def _reserva() -> Reserva:
 class ReservaServiceUnitTests(TestCase):
     def test_crear_reserva_sin_repositorio_devuelve_dto(self):
         service = ReservaService()
-        now = timezone.now()
+        now = timezone.now() + timedelta(minutes=5)
 
         output = service.crear_reserva(
             CrearReservaInputDTO(
@@ -76,7 +76,7 @@ class ReservaServiceUnitTests(TestCase):
         assert output.estado == ReservaEstado.PENDIENTE
 
     def test_crear_reserva_rechaza_fecha_final_invalida(self):
-        now = timezone.now()
+        now = timezone.now() + timedelta(minutes=5)
 
         with self.assertRaises(ReservaConflictoError) as ctx:
             ReservaService().crear_reserva(
@@ -89,6 +89,21 @@ class ReservaServiceUnitTests(TestCase):
             )
 
         assert "fecha final" in str(ctx.exception)
+
+    def test_crear_reserva_rechaza_fecha_de_inicio_pasada(self):
+        now = timezone.now()
+
+        with self.assertRaises(ReservaConflictoError) as ctx:
+            ReservaService().crear_reserva(
+                CrearReservaInputDTO(
+                    aula_id="a1",
+                    inicio=now - timedelta(minutes=10),
+                    fin=now + timedelta(minutes=10),
+                    solicitante_id="u1",
+                )
+            )
+
+        assert "pasado" in str(ctx.exception)
 
     def test_crear_reserva_rechaza_conflictos_del_repo(self):
         reserva = _reserva()
@@ -109,7 +124,7 @@ class ReservaServiceUnitTests(TestCase):
 
     def test_crear_reserva_usa_metodo_transaccional_si_existe(self):
         repo = FakeReservaRepository(reserva=_reserva())
-        now = timezone.now()
+        now = timezone.now() + timedelta(minutes=5)
 
         output = ReservaService(repo).crear_reserva(
             CrearReservaInputDTO(

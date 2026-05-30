@@ -197,7 +197,7 @@
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Infraestructura</p>
-                    <h3 class="card-title">Crear aulas con capacidad</h3>
+                    <h3 class="card-title">Crear, buscar y ajustar aulas</h3>
                 </div>
                 <span class="badge badge-warning">Capacidad</span>
             </div>
@@ -218,6 +218,10 @@
                 </div>
                 <p class="form-status" id="admin-aula-status"></p>
             </form>
+            <div class="stack" style="margin-top: 1rem;">
+                <input class="input" id="admin-aula-search" type="search" placeholder="Buscar aula por nombre o tipo">
+                <p class="support-note">Puedes filtrar el listado y cambiar el estado de disponibilidad desde cada fila.</p>
+            </div>
         </article>
 
         <article class="card">
@@ -235,10 +239,11 @@
                             <th>Capacidad</th>
                             <th>Tipo</th>
                             <th>Estado</th>
+                            <th>Accion</th>
                         </tr>
                     </thead>
                     <tbody id="admin-aulas-body">
-                        <tr><td colspan="4">Cargando aulas...</td></tr>
+                        <tr><td colspan="5">Cargando aulas...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -340,8 +345,8 @@
         <article class="card" id="leader-simulacion">
             <div class="card-header">
                 <div>
-                    <p class="card-subtitle">Simulacion</p>
-                    <h3 class="card-title">Probar escenario con los datos actuales</h3>
+                    <p class="card-subtitle">Simulacion y semestre</p>
+                    <h3 class="card-title">Asignacion automatica por semestre</h3>
                 </div>
                 <span class="badge badge-info">Escenarios</span>
             </div>
@@ -351,15 +356,16 @@
                     <input class="input" name="semestre" value="2026-1" required>
                     <button class="btn btn-ghost" type="submit">Simular cobertura</button>
                     <button class="btn btn-primary" type="button" id="leader-semester-assign">
-                        Asignar semestre
+                        Ejecutar semestre completo
                     </button>
                     <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="leader-sim-status"></p>
             </form>
             <div class="alert alert-info">
-                <strong>Cobertura</strong>
+                <strong>Cobertura y automatizacion</strong>
                 <p id="leader-cobertura-text">Cargando cobertura...</p>
+                <p class="support-note">Este flujo toma todos los grupos del semestre, prioriza capacidad y reporta pendientes sin afectar la informacion ya confirmada.</p>
             </div>
         </article>
     </div>
@@ -624,20 +630,40 @@
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Carga masiva</p>
-                    <h3 class="card-title">Registrar varios grupos</h3>
+                    <h3 class="card-title">Registrar grupos por facultad y programa</h3>
                 </div>
-                <span class="badge badge-success">Carga masiva</span>
+                <span class="badge badge-success">Lote guiado</span>
             </div>
             <form id="admissions-bulk-form" class="stack">
                 {% csrf_token %}
-                <textarea class="textarea" name="bulk_rows" id="admissions-bulk-rows" placeholder="Una linea por grupo: curso_id,docente_id,codigo,num_estudiantes,semestre"></textarea>
                 <div class="field-grid">
+                    <select class="input" id="admissions-facultad-select" name="facultad_id" required>
+                        <option value="">Selecciona una facultad</option>
+                    </select>
+                    <select class="input" id="admissions-programa-select" name="programa_id" required>
+                        <option value="">Selecciona un programa</option>
+                    </select>
+                    <select class="input" id="admissions-curso-select" name="curso_id" required>
+                        <option value="">Selecciona un curso</option>
+                    </select>
+                    <select class="input" id="admissions-docente-select" name="docente_id" required>
+                        <option value="">Selecciona un docente</option>
+                    </select>
+                    <input class="input" name="codigo" id="admissions-codigo" placeholder="codigo del grupo" required>
+                    <input class="input" type="number" name="num_estudiantes" id="admissions-num-estudiantes" min="0" placeholder="estudiantes" required>
                     <input class="input" name="semestre" value="2026-1" required>
-                    <button class="btn btn-primary" type="submit">Procesar lote</button>
-                    <button class="btn btn-ghost" type="reset">Limpiar</button>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="button" id="admissions-add-row">Agregar al lote</button>
+                    <button class="btn btn-ghost" type="submit" id="admissions-process-batch">Procesar lote</button>
+                    <button class="btn btn-ghost" type="button" id="admissions-clear-form">Limpiar formulario</button>
                 </div>
                 <p class="form-status" id="admissions-bulk-status"></p>
             </form>
+            <div class="alert alert-info" style="margin-top: 1rem;">
+                <strong>Flujo guiado</strong>
+                <p>Selecciona facultad y programa para que el lote conserve la relación academica correcta.</p>
+            </div>
         </article>
         <article class="card" id="admissions-cobertura">
             <div class="card-header">
@@ -654,7 +680,65 @@
                 <div class="alert alert-success">
                     <strong>Proceso de admisiones</strong>
                     <p>La interfaz enviara cada grupo al backend y mostrara el progreso real.</p>
+                    <p class="support-note">Cada grupo se construye por facultad, programa, curso y docente para que la carga sea mas clara y controlada.</p>
                 </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card" id="admissions-lote">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Lote en memoria</p>
+                    <h3 class="card-title">Grupos listos para enviar</h3>
+                </div>
+                <div class="hero-actions">
+                    <span class="badge badge-info" id="admissions-queue-count">0 grupos</span>
+                    <span class="badge badge-warning" id="admissions-queue-total">0 estudiantes</span>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Facultad</th>
+                            <th>Programa</th>
+                            <th>Curso</th>
+                            <th>Docente</th>
+                            <th>Codigo</th>
+                            <th>Estudiantes</th>
+                            <th>Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admissions-queue-body">
+                        <tr><td colspan="7">No hay grupos en el lote</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="card" id="admissions-resumen">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Resumen academico</p>
+                    <h3 class="card-title">Facultad y programa</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Facultad</th>
+                            <th>Programa</th>
+                            <th>Grupos</th>
+                            <th>Estudiantes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admissions-summary-body">
+                        <tr><td colspan="4">Sin resumen disponible</td></tr>
+                    </tbody>
+                </table>
             </div>
         </article>
     </div>

@@ -20,6 +20,10 @@ class INotificacionRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def delete(self, notificacion_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def get_unread_notifications_for_user(self, user_id: str) -> Iterable[Notificacion]:
         raise NotImplementedError
 

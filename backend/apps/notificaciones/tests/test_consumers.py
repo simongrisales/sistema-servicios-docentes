@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 from apps.notificaciones.application.dtos import (
     CrearNotificacionInputDTO,
+    EliminarNotificacionInputDTO,
     MarcarLeidaInputDTO,
 )
 from apps.notificaciones.application.use_cases import NotificacionService
@@ -36,6 +37,7 @@ class FakeNotificacionRepository:
             notification_id="n1",
         )
         self.marked = None
+        self.deleted = None
 
     def create_notification(self, notification):
         return Notificacion(
@@ -56,6 +58,14 @@ class FakeNotificacionRepository:
     def mark_as_read(self, notificacion_id: str, user_id: str):
         self.marked = (notificacion_id, user_id)
         return True
+
+    def delete(self, notificacion_id: str):
+        self.deleted = notificacion_id
+
+    def get_by_id(self, notificacion_id: str):
+        if self.notification.notificacion_id == notificacion_id:
+            return self.notification
+        return None
 
 
 def test_enviar_notificacion_sin_repo_devuelve_output():
@@ -112,6 +122,18 @@ def test_listar_y_marcar_notificaciones_con_repo():
     assert all_notifications[0].titulo == "Conflicto"
     assert marked is True
     assert repo.marked == ("n1", "7")
+
+
+def test_eliminar_notificacion_con_repo():
+    repo = FakeNotificacionRepository()
+    service = NotificacionService(repo)
+
+    deleted = service.eliminar_notificacion(
+        EliminarNotificacionInputDTO("n1", "7")
+    )
+
+    assert deleted is True
+    assert repo.deleted == "n1"
 
 
 def test_notificaciones_sin_repo_devuelven_valores_neutros():

@@ -264,12 +264,25 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
             "admisiones": "#admissions-validacion",
         }
         notifications_count = 0
+        notifications_list = []
         if getattr(self.request.user, "is_authenticated", False):
-            notifications_count = NotificacionModel.objects.filter(
+            notifications_qs = NotificacionModel.objects.filter(
                 usuario_destino_id=self.request.user.id,
                 es_leida=False,
                 activo=True,
-            ).count()
+            ).order_by("-fecha_creacion")
+            notifications_count = notifications_qs.count()
+            notifications_list = [
+                {
+                    "id": notification.notificacion_id,
+                    "titulo": notification.titulo,
+                    "mensaje": notification.mensaje,
+                    "tipo": notification.tipo,
+                    "fecha_creacion": notification.fecha_creacion,
+                }
+                for notification in notifications_qs[:8]
+            ]
+        show_metrics = user_role == "administrador"
         context.update(
             {
                 "page_title": self.page_title,
@@ -281,11 +294,21 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
                 "dashboard_user_id": getattr(self.request.user, "id", ""),
                 "dashboard_sidebar_items": self.sidebar_items,
                 "dashboard_notifications_count": notifications_count,
+                "dashboard_notifications": notifications_list,
                 "dashboard_primary_anchor": primary_anchor_by_role.get(
                     user_role, "#main-app"
                 ),
-                "grafana_url": f"http://localhost:{settings.GRAFANA_PORT}",
-                "prometheus_url": f"http://localhost:{settings.PROMETHEUS_PORT}",
+                "dashboard_show_metrics": show_metrics,
+                "grafana_url": (
+                    f"http://localhost:{settings.GRAFANA_PORT}"
+                    if show_metrics
+                    else ""
+                ),
+                "prometheus_url": (
+                    f"http://localhost:{settings.PROMETHEUS_PORT}"
+                    if show_metrics
+                    else ""
+                ),
                 "stats_cards": self.stats_cards,
                 "highlights": self.highlights,
                 "recent_rows": self.recent_rows,

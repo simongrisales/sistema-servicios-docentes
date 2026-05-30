@@ -17,6 +17,12 @@ class MarcarLeidaInputDTO:
 
 
 @dataclass(frozen=True)
+class EliminarNotificacionInputDTO:
+    notificacion_id: str
+    user_id: str
+
+
+@dataclass(frozen=True)
 class NotificacionOutputDTO:
     notificacion_id: str
     titulo: str

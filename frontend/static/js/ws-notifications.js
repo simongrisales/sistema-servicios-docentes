@@ -18,6 +18,71 @@
             );
         };
 
+        const getNotificationList = () => {
+            const existing = document.querySelector("[data-notification-list]");
+            if (existing) {
+                return existing;
+            }
+
+            const menu = document.getElementById("navbar-notifications-menu");
+            if (!menu) {
+                return null;
+            }
+
+            const list = document.createElement("div");
+            list.className = "navbar-notification-list";
+            list.dataset.notificationList = "true";
+
+            const emptyState = menu.querySelector("[data-notification-empty]");
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const firstAction = menu.querySelector(".navbar-menu__action");
+            menu.insertBefore(list, firstAction || null);
+            return list;
+        };
+
+        const prependNotificationItem = (payload) => {
+            if (!payload?.id) {
+                return;
+            }
+
+            if (document.querySelector(`[data-notification-item][data-notification-id="${payload.id}"]`)) {
+                return;
+            }
+
+            const list = getNotificationList();
+            if (!list) {
+                return;
+            }
+
+            const item = document.createElement("div");
+            item.className = "navbar-notification-item";
+            item.dataset.notificationItem = "true";
+            item.dataset.notificationId = payload.id;
+            item.innerHTML = `
+                <div class="navbar-notification-item__body">
+                    <p class="navbar-notification-item__title">${payload.title || "Notificacion"}</p>
+                    <p class="navbar-notification-item__message">${payload.message || ""}</p>
+                    <p class="navbar-notification-item__meta">${new Date().toLocaleString("es-CO", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                    })}</p>
+                </div>
+                <button
+                    class="navbar-notification-delete"
+                    type="button"
+                    data-notification-delete="${payload.id}"
+                    aria-label="Eliminar notificacion ${payload.title || "nueva"}"
+                >
+                    &times;
+                </button>
+            `;
+
+            list.prepend(item);
+        };
+
         try {
             const socket = new WebSocket(socketUrl);
 
@@ -40,6 +105,7 @@
                         type: payload.level || "info",
                         message: payload.message || "Nueva notificacion disponible.",
                     });
+                    prependNotificationItem(payload);
                 }
 
                 if (payload.tipo === "aula_actualizada") {

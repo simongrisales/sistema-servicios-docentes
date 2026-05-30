@@ -81,6 +81,13 @@
         body,
         ...opts,
       }),
+    patch: (url, body, opts = {}) =>
+      request({
+        url,
+        method: 'PATCH',
+        body,
+        ...opts,
+      }),
     del: (url, opts = {}) =>
       request({
         url,

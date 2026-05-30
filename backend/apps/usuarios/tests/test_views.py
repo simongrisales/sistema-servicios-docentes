@@ -221,3 +221,20 @@ class UsuariosViewsTests(APITestCase):
         assert response.status_code == status.HTTP_200_OK
         assert "/logout/" in response.content.decode()
         assert "Cerrar sesion" in response.content.decode()
+
+    def test_metricas_solo_se_muestran_al_administrador(self):
+        admin = self._create_user("admin_metrics", RolSistema.ADMINISTRADOR)
+        facultad = self._create_user("facultad_metrics", RolSistema.FACULTAD)
+
+        self.client.force_login(admin)
+        admin_response = self.client.get("/dashboard/administrador/")
+
+        self.client.force_login(facultad)
+        faculty_response = self.client.get("/dashboard/facultad/")
+
+        assert admin_response.status_code == status.HTTP_200_OK
+        assert "Prometheus" in admin_response.content.decode()
+        assert "Grafana" in admin_response.content.decode()
+        assert faculty_response.status_code == status.HTTP_200_OK
+        assert "Prometheus" not in faculty_response.content.decode()
+        assert "Grafana" not in faculty_response.content.decode()

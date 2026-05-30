@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from django.db import transaction
+from django.utils import timezone
 
 from ..domain.entities import Reserva, ReservaEstado
 from ..domain.exceptions import ReservaConflictoError, ReservaNoEncontradaError
@@ -20,6 +21,9 @@ class ReservaService:
         self.reserva_repo = reserva_repo
 
     def crear_reserva(self, input_dto: CrearReservaInputDTO) -> ReservaOutputDTO:
+        ahora = timezone.now()
+        if input_dto.inicio < ahora:
+            raise ReservaConflictoError("La fecha de inicio no puede estar en el pasado.")
         if input_dto.fin <= input_dto.inicio:
             raise ReservaConflictoError("La fecha final debe ser posterior al inicio.")
         if self.reserva_repo and self.reserva_repo.find_conflicts(

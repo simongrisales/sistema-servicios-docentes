@@ -13,12 +13,16 @@
     roles: [],
     users: [],
     aulas: [],
+    aulasAdmin: [],
     grupos: [],
     docentes: [],
     cursos: [],
+    facultades: [],
+    programas: [],
     bloques: [],
     reservas: [],
     parametros: [],
+    admissionsDraft: [],
   };
 
   let refreshTimer = null;
@@ -100,6 +104,18 @@
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
+  const uniqueBy = (items, keyFn) => {
+    const seen = new Map();
+    for (const item of items) {
+      const key = keyFn(item);
+      if (!key || seen.has(key)) {
+        continue;
+      }
+      seen.set(key, item);
+    }
+    return Array.from(seen.values());
+  };
+
   const formDataObject = (form) => {
     const data = {};
     const fd = new FormData(form);
@@ -114,13 +130,29 @@
   };
 
   const loadCatalog = async () => {
-    const [roles, users, aulas, grupos, docentes, cursos, bloques, reservas, parametros] = await Promise.all([
+    const [
+      roles,
+      users,
+      aulas,
+      aulasAdmin,
+      grupos,
+      docentes,
+      cursos,
+      facultades,
+      programas,
+      bloques,
+      reservas,
+      parametros,
+    ] = await Promise.all([
       fetchJson('/api/usuarios/catalogo-roles/').catch(() => []),
       fetchJson('/api/usuarios/lista/').catch(() => []),
       fetchJson('/api/academico/aulas/').catch(() => []),
+      fetchJson('/api/academico/aulas/buscar/').catch(() => []),
       fetchJson('/api/academico/aulas/grupos/').catch(() => []),
       fetchJson('/api/academico/aulas/docentes/').catch(() => []),
       fetchJson('/api/academico/aulas/cursos/').catch(() => []),
+      fetchJson('/api/academico/aulas/facultades/').catch(() => []),
+      fetchJson('/api/academico/aulas/programas/').catch(() => []),
       fetchJson('/api/academico/aulas/bloques/').catch(() => []),
       fetchJson('/api/reservas/').catch(() => []),
       fetchJson('/api/parametros/').catch(() => []),
@@ -129,12 +161,50 @@
     state.roles = roles;
     state.users = users;
     state.aulas = aulas;
+    state.aulasAdmin = aulasAdmin;
     state.grupos = grupos;
     state.docentes = docentes;
     state.cursos = cursos;
+    state.facultades = facultades;
+    state.programas = programas;
     state.bloques = bloques;
     state.reservas = reservas;
     state.parametros = parametros;
+  };
+
+  const getAdmissionsFacultades = () =>
+    state.facultades.map((item) => ({
+      id: item.id,
+      codigo: item.codigo,
+      nombre: item.nombre,
+      programas: Number(item.programas || 0),
+    }));
+
+  const getAdmissionsProgramas = (facultadId) =>
+    state.programas
+      .filter((item) => String(item.facultad_id) === String(facultadId))
+      .map((item) => ({
+        id: item.id,
+        codigo: item.codigo,
+        nombre: item.nombre,
+        facultad_id: item.facultad_id,
+        facultad_nombre: item.facultad_nombre,
+      }));
+
+  const getAdmissionsCursos = (programaId) =>
+    state.cursos.filter((item) => String(item.programa_id) === String(programaId));
+
+  const getSelectedOption = (selectId) =>
+    document.getElementById(selectId)?.value || '';
+
+  const setSelectedOption = (selectId, value) => {
+    const select = document.getElementById(selectId);
+    if (!select || !value) {
+      return;
+    }
+    if (Array.from(select.options).some((option) => option.value === String(value))) {
+      select.value = String(value);
+    }
   };
 
   const renderCurrentPanel = () => {
@@ -177,6 +247,18 @@
   };
 
   const renderAdmin = () => {
+    const adminQuery = normalizeText(document.getElementById('admin-aula-search')?.value || '');
+    const aulasAdmin = adminQuery
+      ? state.aulasAdmin.filter((aula) => {
+          const haystack = normalizeText(
+            [aula.nombre, aula.capacidad, aula.tipo, aula.disponible ? 'disponible' : 'ocupada']
+              .filter(Boolean)
+              .join(' ')
+          );
+          return haystack.includes(adminQuery);
+        })
+      : state.aulasAdmin;
+
     renderOptions(
       'admin-user-role',
       state.roles,
@@ -207,15 +289,26 @@
         .join('')
     );
 
+    const aulasAdminRows = aulasAdmin
+      .map(
+        (aula) =>
+          `<tr>
+            <td>${esc(aula.nombre)}</td>
+            <td>${esc(aula.capacidad)}</td>
+            <td>${esc(aula.tipo)}</td>
+            <td><span class="badge ${aula.disponible ? 'badge-success' : 'badge-warning'}">${aula.disponible ? 'Disponible' : 'Ocupada'}</span></td>
+            <td>
+              <button class="btn btn-ghost" type="button" data-aula-toggle="${esc(aula.id)}">
+                ${aula.disponible ? 'Marcar ocupada' : 'Marcar disponible'}
+              </button>
+            </td>
+          </tr>`
+      )
+      .join('');
+
     renderTable(
       'admin-aulas-body',
-      state.aulas
-        .map(
-          (aula) =>
-            `<tr><td>${esc(aula.nombre)}</td><td>${esc(aula.capacidad)}</td><td>${esc(aula.tipo)}</td><td><span class="badge ${aula.disponible ? 'badge-success' : 'badge-warning'}">${aula.disponible ? 'Disponible' : 'Ocupada'}</span></td></tr>`
-        )
-        .join(''),
-      'No hay aulas registradas'
+      aulasAdminRows || `<tr><td colspan="5">${esc(adminQuery ? 'No hay aulas que coincidan con el filtro' : 'No hay aulas registradas')}</td></tr>`
     );
 
     renderTable(
@@ -237,6 +330,33 @@
     const userForm = document.getElementById('admin-user-form');
     const aulaForm = document.getElementById('admin-aula-form');
     const paramForm = document.getElementById('admin-param-form');
+    const aulaSearch = document.getElementById('admin-aula-search');
+    const aulaBody = document.getElementById('admin-aulas-body');
+
+    aulaSearch?.addEventListener('input', () => {
+      renderAdmin();
+    });
+
+    aulaBody?.addEventListener('click', async (evt) => {
+      const button = evt.target.closest('[data-aula-toggle]');
+      if (!button) {
+        return;
+      }
+      const aulaId = button.getAttribute('data-aula-toggle');
+      const aula = state.aulasAdmin.find((item) => String(item.id) === String(aulaId));
+      if (!aula) {
+        return;
+      }
+      try {
+        await api().patch(`/api/academico/aulas/${aulaId}/estado/`, {
+          disponible: !aula.disponible,
+        });
+        toast('success', 'Estado del aula actualizado.');
+        await refreshCurrentPanel();
+      } catch (error) {
+        toast('error', error.details || 'No se pudo actualizar el estado del aula.');
+      }
+    });
 
     roleForm?.addEventListener('submit', async (evt) => {
       evt.preventDefault();
@@ -394,6 +514,17 @@
     });
 
     semesterAssignButton?.addEventListener('click', async () => {
+      const semesterValue = formDataObject(simForm).semestre;
+      if (!semesterValue) {
+        showStatus('leader-sim-status', 'Debes indicar un semestre para ejecutar la asignacion.', 'error');
+        return;
+      }
+      const confirmed = window.confirm(
+        `Vas a ejecutar la asignacion automatica completa para ${semesterValue}. ¿Deseas continuar?`
+      );
+      if (!confirmed) {
+        return;
+      }
       const data = formDataObject(simForm);
       try {
         const result = await postJson('/api/asignacion/ejecutar-semestre/', {
@@ -605,7 +736,144 @@
     });
   };
 
+  const renderAdmissionsSelectors = () => {
+    const facultySelect = document.getElementById('admissions-facultad-select');
+    const programSelect = document.getElementById('admissions-programa-select');
+    const courseSelect = document.getElementById('admissions-curso-select');
+    const docenteSelect = document.getElementById('admissions-docente-select');
+    if (!facultySelect || !programSelect || !courseSelect || !docenteSelect) {
+      return;
+    }
+
+    const currentFaculty = facultySelect.value;
+    const currentProgram = programSelect.value;
+    const currentCourse = courseSelect.value;
+
+    const faculties = getAdmissionsFacultades();
+    renderOptions('admissions-facultad-select', faculties, {
+      placeholder: 'Selecciona una facultad',
+      valueKey: 'id',
+      labelFn: (item) => (item.codigo ? `${item.nombre} (${item.codigo})` : item.nombre),
+    });
+    if (currentFaculty) {
+      setSelectedOption('admissions-facultad-select', currentFaculty);
+    } else if (faculties[0]) {
+      setSelectedOption('admissions-facultad-select', faculties[0].id);
+    }
+
+    const activeFaculty = getSelectedOption('admissions-facultad-select');
+    const programs = getAdmissionsProgramas(activeFaculty);
+    renderOptions('admissions-programa-select', programs, {
+      placeholder: 'Selecciona un programa',
+      valueKey: 'id',
+      labelFn: (item) => (item.codigo ? `${item.nombre} (${item.codigo})` : item.nombre),
+    });
+    if (currentProgram && programs.some((item) => String(item.id) === String(currentProgram))) {
+      setSelectedOption('admissions-programa-select', currentProgram);
+    } else if (programs[0]) {
+      setSelectedOption('admissions-programa-select', programs[0].id);
+    }
+
+    const activeProgram = getSelectedOption('admissions-programa-select');
+    const courses = getAdmissionsCursos(activeProgram);
+    renderOptions('admissions-curso-select', courses, {
+      placeholder: 'Selecciona un curso',
+      valueKey: 'id',
+      labelFn: (item) => `${item.codigo} - ${item.nombre}`,
+    });
+    if (currentCourse && courses.some((item) => String(item.id) === String(currentCourse))) {
+      setSelectedOption('admissions-curso-select', currentCourse);
+    } else if (courses[0]) {
+      setSelectedOption('admissions-curso-select', courses[0].id);
+    }
+
+    renderOptions('admissions-docente-select', state.docentes, {
+      placeholder: 'Selecciona un docente',
+      valueKey: 'id',
+      labelFn: (item) => `${item.nombre} - ${item.email}`,
+    });
+  };
+
+  const renderAdmissionsQueue = () => {
+    const queueBody = document.getElementById('admissions-queue-body');
+    const summaryBody = document.getElementById('admissions-summary-body');
+    const queueCount = document.getElementById('admissions-queue-count');
+    const queueTotal = document.getElementById('admissions-queue-total');
+
+    const totalStudents = state.admissionsDraft.reduce(
+      (acc, item) => acc + Number(item.num_estudiantes || 0),
+      0
+    );
+
+    if (queueCount) {
+      queueCount.textContent = `${state.admissionsDraft.length} grupos`;
+    }
+    if (queueTotal) {
+      queueTotal.textContent = `${totalStudents} estudiantes`;
+    }
+
+    if (queueBody) {
+      queueBody.innerHTML = state.admissionsDraft.length
+        ? state.admissionsDraft
+            .map(
+              (item, index) =>
+                `<tr>
+                  <td>${esc(item.facultad_nombre)}</td>
+                  <td>${esc(item.programa_nombre)}</td>
+                  <td>${esc(item.curso_nombre)}</td>
+                  <td>${esc(item.docente_nombre)}</td>
+                  <td>${esc(item.codigo)}</td>
+                  <td>${esc(item.num_estudiantes)}</td>
+                  <td>
+                    <button class="btn btn-ghost" type="button" data-admissions-remove="${index}">Quitar</button>
+                  </td>
+                </tr>`
+            )
+            .join('')
+        : '<tr><td colspan="7">No hay grupos en el lote</td></tr>';
+    }
+
+    if (summaryBody) {
+      const summary = new Map();
+      for (const item of state.admissionsDraft) {
+        const key = `${item.facultad_nombre}::${item.programa_nombre}`;
+        const current = summary.get(key) || {
+          facultad_nombre: item.facultad_nombre,
+          programa_nombre: item.programa_nombre,
+          grupos: 0,
+          estudiantes: 0,
+        };
+        current.grupos += 1;
+        current.estudiantes += Number(item.num_estudiantes || 0);
+        summary.set(key, current);
+      }
+
+      summaryBody.innerHTML = summary.size
+        ? Array.from(summary.values())
+            .map(
+              (item) =>
+                `<tr><td>${esc(item.facultad_nombre)}</td><td>${esc(item.programa_nombre)}</td><td>${esc(item.grupos)}</td><td>${esc(item.estudiantes)}</td></tr>`
+            )
+            .join('')
+        : '<tr><td colspan="4">Sin resumen disponible</td></tr>';
+    }
+
+    document.querySelectorAll('[data-admissions-remove]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const index = Number.parseInt(button.getAttribute('data-admissions-remove') || '-1', 10);
+        if (Number.isNaN(index) || index < 0) {
+          return;
+        }
+        state.admissionsDraft.splice(index, 1);
+        renderAdmissionsQueue();
+      });
+    });
+  };
+
   const renderAdmissions = () => {
+    renderAdmissionsSelectors();
+    renderAdmissionsQueue();
+
     renderTable(
       'admissions-grupos-body',
       state.grupos
@@ -622,39 +890,38 @@
     if (admissionsBound) return;
     admissionsBound = true;
     const form = document.getElementById('admissions-bulk-form');
-    form?.addEventListener('submit', async (evt) => {
-      evt.preventDefault();
-      const bulkRows = document.getElementById('admissions-bulk-rows');
-      const rows = (bulkRows?.value || '')
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean);
+    const addRowButton = document.getElementById('admissions-add-row');
+    const clearFormButton = document.getElementById('admissions-clear-form');
+    const facultySelect = document.getElementById('admissions-facultad-select');
+    const programSelect = document.getElementById('admissions-programa-select');
 
-      if (!rows.length) {
-        showStatus('admissions-bulk-status', 'Agrega al menos una linea con datos del grupo.', 'error');
+    const processQueue = async () => {
+      if (!state.admissionsDraft.length) {
+        showStatus('admissions-bulk-status', 'Agrega al menos un grupo al lote antes de procesar.', 'error');
         return;
       }
 
       let successCount = 0;
       let errorCount = 0;
+      const remainingDraft = [];
 
-      for (const line of rows) {
-        const [curso_id, docente_id, codigo, num_estudiantes, semestre] = line.split(',').map((item) => item.trim());
+      for (const item of state.admissionsDraft) {
         try {
           await postJson('/api/academico/aulas/grupos/', {
-            curso_id,
-            docente_id,
-            codigo,
-            num_estudiantes: Number(num_estudiantes),
-            semestre,
+            curso_id: item.curso_id,
+            docente_id: item.docente_id,
+            codigo: item.codigo,
+            num_estudiantes: Number(item.num_estudiantes),
+            semestre: item.semestre,
           });
           successCount += 1;
         } catch (error) {
           errorCount += 1;
+          remainingDraft.push(item);
         }
       }
 
-      const total = rows.length;
+      const total = state.admissionsDraft.length;
       const percent = total > 0 ? Math.round((successCount / total) * 100) : 0;
       const fill = document.getElementById('admissions-progress-fill');
       const progress = document.getElementById('admissions-progress-text');
@@ -667,7 +934,74 @@
         errorCount > 0 ? 'warning' : 'success'
       );
       toast(errorCount > 0 ? 'warning' : 'success', 'Procesamiento de lote finalizado.');
+      state.admissionsDraft = remainingDraft;
+      renderAdmissionsQueue();
+      if (state.admissionsDraft.length === 0) {
+        form?.reset();
+      }
+      renderAdmissionsSelectors();
       await refreshCurrentPanel();
+    };
+
+    facultySelect?.addEventListener('change', () => {
+      renderAdmissionsSelectors();
+    });
+
+    programSelect?.addEventListener('change', () => {
+      renderAdmissionsSelectors();
+    });
+
+    addRowButton?.addEventListener('click', () => {
+      const data = formDataObject(form);
+      const curso = state.cursos.find((item) => String(item.id) === String(data.curso_id));
+      const docente = state.docentes.find((item) => String(item.id) === String(data.docente_id));
+      const facultad = getAdmissionsFacultades().find(
+        (item) => item.id === getSelectedOption('admissions-facultad-select')
+      );
+      const programa = getAdmissionsProgramas(getSelectedOption('admissions-facultad-select')).find(
+        (item) => String(item.id) === String(getSelectedOption('admissions-programa-select'))
+      );
+
+      if (
+        !curso ||
+        !docente ||
+        !facultad ||
+        !programa ||
+        String(curso.programa_id) !== String(programa.id) ||
+        !data.codigo ||
+        !data.num_estudiantes ||
+        !data.semestre
+      ) {
+        showStatus('admissions-bulk-status', 'Completa la facultad, el programa, el curso, el docente y los datos del grupo.', 'error');
+        return;
+      }
+
+      state.admissionsDraft.push({
+        facultad_id: String(facultad.id),
+        facultad_nombre: facultad.nombre,
+        programa_id: String(programa.id),
+        programa_nombre: programa.nombre,
+        curso_id: String(curso.id),
+        curso_nombre: `${curso.codigo} - ${curso.nombre}`,
+        docente_id: String(docente.id),
+        docente_nombre: `${docente.nombre} - ${docente.email}`,
+        codigo: data.codigo,
+        num_estudiantes: Number(data.num_estudiantes),
+        semestre: data.semestre,
+      });
+      renderAdmissionsQueue();
+      showStatus('admissions-bulk-status', 'Grupo agregado al lote. Puedes seguir sumando mas registros o procesarlo.', 'success');
+    });
+
+    clearFormButton?.addEventListener('click', () => {
+      form?.reset();
+      renderAdmissionsSelectors();
+      showStatus('admissions-bulk-status', 'Formulario limpiado.', 'info');
+    });
+
+    form?.addEventListener('submit', async (evt) => {
+      evt.preventDefault();
+      await processQueue();
     });
   };
 

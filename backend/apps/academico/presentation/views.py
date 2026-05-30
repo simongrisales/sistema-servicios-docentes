@@ -1,3 +1,4 @@
+from django.db import models
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +11,9 @@ from ..infrastructure.models import (
     DocenteModel,
     GrupoModel,
     HorarioBloqueModel,
+    AulaModel,
+    FacultadModel,
+    ProgramaModel,
 )
 from ..infrastructure.repositories import (
     AulaRepository,
@@ -19,10 +23,14 @@ from ..infrastructure.repositories import (
 from .serializers import (
     AulaInputSerializer,
     AulaOutputSerializer,
+    AulaEstadoSerializer,
+    AulaBusquedaSerializer,
     CursoOutputSerializer,
     DocenteOutputSerializer,
     GrupoOutputSerializer,
     GrupoSerializer,
+    FacultadOutputSerializer,
+    ProgramaOutputSerializer,
 )
 
 
@@ -50,6 +58,85 @@ class AcademicoViewSet(viewsets.ViewSet):
             AulaOutputSerializer(aula).data,
             status=status.HTTP_201_CREATED,
         )
+
+    @action(detail=False, methods=["get"], url_path="buscar")
+    def buscar(self, request):
+        serializer = AulaBusquedaSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        q = serializer.validated_data.get("q", "").strip()
+        queryset = AulaModel.objects.filter(activa=True).order_by("nombre")
+        if q:
+            queryset = queryset.filter(nombre__icontains=q)
+        data = [
+            {
+                "id": aula.id,
+                "nombre": aula.nombre,
+                "capacidad": aula.capacidad,
+                "tipo": aula.tipo,
+                "disponible": aula.disponible,
+                "activa": aula.activa,
+            }
+            for aula in queryset
+        ]
+        return Response(AulaOutputSerializer(data, many=True).data)
+
+    @action(detail=True, methods=["patch"], url_path="estado")
+    def estado(self, request, pk=None):
+        serializer = AulaEstadoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cambios = serializer.validated_data
+        if not cambios:
+            return Response(
+                {"detail": "Debes enviar al menos un campo de estado."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        aula = AulaRepository().update(pk, cambios)
+        return Response(AulaOutputSerializer(aula).data)
+
+    @action(detail=False, methods=["get"], url_path="facultades")
+    def facultades(self, request):
+        facultades = (
+            FacultadModel.objects.annotate(
+                programas_count=models.Count("programas", distinct=True)
+            )
+            .filter(activa=True)
+            .order_by("nombre")
+        )
+        data = [
+            {
+                "id": facultad.id,
+                "codigo": facultad.codigo,
+                "nombre": facultad.nombre,
+                "activa": facultad.activa,
+                "programas": facultad.programas_count,
+            }
+            for facultad in facultades
+        ]
+        return Response(FacultadOutputSerializer(data, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="programas")
+    def programas(self, request):
+        facultad_id = request.query_params.get("facultad_id")
+        queryset = (
+            ProgramaModel.objects.select_related("facultad")
+            .filter(activo=True)
+            .order_by("facultad__nombre", "nombre")
+        )
+        if facultad_id:
+            queryset = queryset.filter(facultad_id=facultad_id)
+        data = [
+            {
+                "id": programa.id,
+                "facultad_id": programa.facultad_id,
+                "facultad_codigo": programa.facultad.codigo,
+                "facultad_nombre": programa.facultad.nombre,
+                "codigo": programa.codigo,
+                "nombre": programa.nombre,
+                "activo": programa.activo,
+            }
+            for programa in queryset
+        ]
+        return Response(ProgramaOutputSerializer(data, many=True).data)
 
     @action(detail=False, methods=["get"], url_path="docentes")
     def docentes(self, request):

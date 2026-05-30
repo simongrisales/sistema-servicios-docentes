@@ -15,6 +15,30 @@ class AulaOutputSerializer(serializers.Serializer):
     capacidad = serializers.IntegerField(label=_("Capacidad"))
     tipo = serializers.CharField(label=_("Tipo"))
     disponible = serializers.BooleanField(label=_("Disponible"))
+    activa = serializers.BooleanField(required=False, label=_("Activa"))
+
+
+class AulaEstadoSerializer(serializers.Serializer):
+    disponible = serializers.BooleanField(required=False, label=_("Disponible"))
+    activa = serializers.BooleanField(required=False, label=_("Activa"))
+
+
+class FacultadOutputSerializer(serializers.Serializer):
+    id = serializers.UUIDField(label=_("ID"))
+    codigo = serializers.CharField(label=_("Codigo"))
+    nombre = serializers.CharField(label=_("Nombre"))
+    activa = serializers.BooleanField(label=_("Activa"))
+    programas = serializers.IntegerField(label=_("Programas"))
+
+
+class ProgramaOutputSerializer(serializers.Serializer):
+    id = serializers.UUIDField(label=_("ID"))
+    facultad_id = serializers.UUIDField(label=_("Facultad"))
+    facultad_codigo = serializers.CharField(label=_("Codigo de facultad"))
+    facultad_nombre = serializers.CharField(label=_("Facultad"))
+    codigo = serializers.CharField(label=_("Codigo"))
+    nombre = serializers.CharField(label=_("Nombre"))
+    activo = serializers.BooleanField(label=_("Activo"))
 
 
 class DocenteOutputSerializer(serializers.Serializer):
@@ -57,3 +81,7 @@ class GrupoSerializer(serializers.Serializer):
         label=_("Numero de estudiantes"),
     )
     semestre = serializers.CharField(max_length=20, label=_("Semestre"))
+
+
+class AulaBusquedaSerializer(serializers.Serializer):
+    q = serializers.CharField(required=False, allow_blank=True, label=_("Busqueda"))
