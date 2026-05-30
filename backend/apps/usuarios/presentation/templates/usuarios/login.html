@@ -5,60 +5,112 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistema de Servicios Docentes | Ingreso</title>
+    {% if recaptcha_site_key and recaptcha_mode == "v3" %}
     <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+    {% elif recaptcha_site_key %}
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
     <link href="{% static 'css/tailwind.css' %}" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
-    <main class="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
-        <section id="login-card"
-                 class="login-card w-full max-w-md rounded-3xl border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur">
-            <div class="mb-8 text-center">
-                <p class="text-sm uppercase tracking-[0.35em] text-cyan-300">UCO</p>
-                <h1 class="mt-2 text-3xl font-semibold">Sistema de Servicios Docentes</h1>
-                <p class="mt-2 text-sm text-slate-400">Ingresa con tu cuenta institucional.</p>
+<body class="login-shell">
+    <main class="login-layout">
+        <section class="login-hero" aria-label="Presentacion del sistema">
+            <div class="brand-mark brand-mark--light">
+                <img src="{% static 'images/logo-uco.png' %}" alt="UCO" class="brand-mark__logo">
+                <div>
+                    <p class="brand-mark__eyebrow">Universidad Catolica de Oriente</p>
+                    <h1>Sistema de Servicios Docentes</h1>
+                </div>
             </div>
 
-            <form id="login-form" method="post" action="{% url 'login' %}"
-                  data-token-url="{% url 'token_obtain_pair' %}" class="space-y-5">
+            <p class="login-hero__eyebrow">Asignacion academica de aulas</p>
+            <h2>Una experiencia institucional clara, rapida y segura.</h2>
+            <p class="login-hero__lead">
+                Accede al panel segun tu rol para gestionar asignaciones, reservas, carga masiva,
+                cobertura y monitoreo del proceso academico.
+            </p>
+
+            <div class="feature-cluster">
+                <span class="feature-pill">Login por rol</span>
+                <span class="feature-pill">JWT + sesiones</span>
+                <span class="feature-pill">WebSockets</span>
+                <span class="feature-pill">Prometheus y Grafana</span>
+            </div>
+
+            <div class="login-hero__panel">
+                <div class="login-hero__metric">
+                    <strong>+80%</strong>
+                    <span>cobertura objetivo</span>
+                </div>
+                <div class="login-hero__metric">
+                    <strong>5 roles</strong>
+                    <span>operacion controlada</span>
+                </div>
+                <div class="login-hero__metric">
+                    <strong>1 flujo</strong>
+                    <span>por rol institucional</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="login-card" class="login-card">
+            <div class="login-card__header">
+                <p class="login-card__kicker">Ingreso institucional</p>
+                <h2>Inicia sesion para continuar</h2>
+                <p>Usa tus credenciales institucionales para entrar al panel correspondiente.</p>
+            </div>
+
+            <form id="login-form" method="post" action="{% url 'login' %}" data-token-url="{% url 'token_obtain_pair' %}" class="login-form">
                 {% csrf_token %}
                 <input type="hidden" name="recaptcha_token" id="recaptcha-token">
                 {% if error_message %}
-                    <p class="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                        {{ error_message }}
-                    </p>
+                    <div class="alert alert-error">
+                        <strong>Error de acceso</strong>
+                        <p>{{ error_message }}</p>
+                    </div>
                 {% endif %}
 
-                <label class="block">
-                    <span class="mb-2 block text-sm font-medium text-slate-300">Usuario</span>
-                    <input type="text" name="username" required
-                           class="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400">
+                <label class="field">
+                    <span>Usuario</span>
+                    <input type="text" name="username" required autocomplete="username" class="input input--light" placeholder="usuario institucional">
                 </label>
 
-                <label class="block">
-                    <span class="mb-2 block text-sm font-medium text-slate-300">Contraseña</span>
-                    <input type="password" name="password" required
-                           class="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400">
+                <label class="field">
+                    <span>Contraseña</span>
+                    <input type="password" name="password" required autocomplete="current-password" class="input input--light" placeholder="••••••••">
                 </label>
 
-                <button type="submit"
-                        class="w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300">
-                    Ingresar
+                {% if recaptcha_mode == "v2" %}
+                <div class="captcha-frame">
+                    <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                    <p class="captcha-note">Completa el captcha antes de ingresar.</p>
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary btn-primary--wide">
+                    Acceder
                 </button>
             </form>
+
+            <div class="login-card__footer">
+                <p>El sistema dirige automaticamente cada usuario a su dashboard autorizado.</p>
+            </div>
         </section>
     </main>
 
     <script>
       const form = document.getElementById("login-form");
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        grecaptcha.ready(function () {
-          grecaptcha.execute("{{ recaptcha_site_key }}", {action: "login"}).then(function (token) {
-            document.getElementById("recaptcha-token").value = token;
-            form.submit();
+      if (form && "{{ recaptcha_mode }}" === "v3" && typeof grecaptcha !== "undefined") {
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          grecaptcha.ready(function () {
+            grecaptcha.execute("{{ recaptcha_site_key }}", {action: "login"}).then(function (token) {
+              document.getElementById("recaptcha-token").value = token;
+              form.submit();
+            });
           });
         });
-      });
+      }
     </script>
 </body>
 </html>

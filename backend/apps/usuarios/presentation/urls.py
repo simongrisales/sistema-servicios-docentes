@@ -15,5 +15,20 @@ urlpatterns = [
         name="token_obtain_pair_recaptcha",
     ),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path(
+        "usuarios/lista/",
+        UsuarioViewSet.as_view({"get": "list"}),
+        name="usuarios_lista",
+    ),
+    path(
+        "usuarios/crear/",
+        UsuarioViewSet.as_view({"post": "create"}),
+        name="usuarios_crear",
+    ),
+    path(
+        "usuarios/catalogo-roles/",
+        UsuarioViewSet.as_view({"get": "roles", "post": "crear_rol"}),
+        name="usuarios_roles_catalogo",
+    ),
     *router.urls,
 ]

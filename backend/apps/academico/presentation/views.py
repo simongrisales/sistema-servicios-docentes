@@ -5,12 +5,20 @@ from rest_framework.response import Response
 
 from ..application.dtos import AulaInputDTO, GrupoInputDTO
 from ..application.use_cases import AcademicoService
+from ..infrastructure.models import CursoModel, DocenteModel, GrupoModel, HorarioBloqueModel
 from ..infrastructure.repositories import (
     AulaRepository,
     DocenteRepository,
     GrupoRepository,
 )
-from .serializers import AulaInputSerializer, AulaOutputSerializer, GrupoSerializer
+from .serializers import (
+    AulaInputSerializer,
+    AulaOutputSerializer,
+    CursoOutputSerializer,
+    DocenteOutputSerializer,
+    GrupoOutputSerializer,
+    GrupoSerializer,
+)
 
 
 class AcademicoViewSet(viewsets.ViewSet):
@@ -38,8 +46,100 @@ class AcademicoViewSet(viewsets.ViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(detail=False, methods=["post"], url_path="grupos")
+    @action(detail=False, methods=["get"], url_path="docentes")
+    def docentes(self, request):
+        docentes = DocenteModel.objects.filter(activo=True).order_by("nombre")
+        data = [
+            {
+                "id": docente.id,
+                "nombre": docente.nombre,
+                "email": docente.email,
+                "activo": docente.activo,
+            }
+            for docente in docentes
+        ]
+        return Response(DocenteOutputSerializer(data, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="cursos")
+    def cursos(self, request):
+        cursos = (
+            CursoModel.objects.select_related("programa")
+            .filter(activo=True)
+            .order_by("nombre")
+        )
+        data = [
+            {
+                "id": curso.id,
+                "programa_id": curso.programa_id,
+                "codigo": curso.codigo,
+                "nombre": curso.nombre,
+                "creditos": curso.creditos,
+                "activo": curso.activo,
+            }
+            for curso in cursos
+        ]
+        return Response(CursoOutputSerializer(data, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="grupos")
+    def grupos(self, request):
+        grupos = (
+            GrupoModel.objects.select_related("curso", "docente")
+            .filter(activo=True)
+            .order_by("semestre", "codigo")
+        )
+        data = [
+            {
+                "id": grupo.id,
+                "curso_id": grupo.curso_id,
+                "docente_id": grupo.docente_id,
+                "codigo": grupo.codigo,
+                "num_estudiantes": grupo.num_estudiantes,
+                "semestre": grupo.semestre,
+                "activo": grupo.activo,
+            }
+            for grupo in grupos
+        ]
+        return Response(GrupoOutputSerializer(data, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="bloques")
+    def bloques(self, request):
+        bloques = HorarioBloqueModel.objects.filter(activo=True).order_by(
+            "dia", "hora_inicio"
+        )
+        return Response(
+            [
+                {
+                    "id": bloque.id,
+                    "dia": bloque.dia,
+                    "hora_inicio": bloque.hora_inicio,
+                    "hora_fin": bloque.hora_fin,
+                    "activo": bloque.activo,
+                }
+                for bloque in bloques
+            ]
+        )
+
+    @action(detail=False, methods=["get", "post"], url_path="grupos")
     def crear_grupo(self, request):
+        if request.method.lower() == "get":
+            grupos = (
+                GrupoModel.objects.select_related("curso", "docente")
+                .filter(activo=True)
+                .order_by("semestre", "codigo")
+            )
+            data = [
+                {
+                    "id": grupo.id,
+                    "curso_id": grupo.curso_id,
+                    "docente_id": grupo.docente_id,
+                    "codigo": grupo.codigo,
+                    "num_estudiantes": grupo.num_estudiantes,
+                    "semestre": grupo.semestre,
+                    "activo": grupo.activo,
+                }
+                for grupo in grupos
+            ]
+            return Response(GrupoOutputSerializer(data, many=True).data)
         serializer = GrupoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         grupo = self._service().crear_grupo(GrupoInputDTO(**serializer.validated_data))

@@ -31,6 +31,12 @@ class ReservasViewSet(viewsets.ViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    def list(self, request):
+        from ..infrastructure.repositories import ReservaRepository
+
+        reservas = ReservaRepository().list()
+        return Response(ReservaOutputSerializer(reservas, many=True).data)
+
     @action(detail=True, methods=["post"], url_path="confirmar")
     def confirmar(self, request, pk=None):
         reserva = self._service().confirmar_reserva(

@@ -51,6 +51,8 @@ jobs:
       JWT_REFRESH_TOKEN_LIFETIME: 7
       RECAPTCHA_PUBLIC_KEY: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
       RECAPTCHA_PRIVATE_KEY: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - name: Checkout del repositorio
@@ -74,7 +76,17 @@ jobs:
         run: pytest backend/ --cov=backend/ --cov-report=xml
 
       - name: SonarQube scanner
-        run: sonar-scanner -Dproject.settings=sonar-project.properties
+        if: env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          args: -Dproject.settings=sonar-project.properties
+        env:
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+
+      - name: SonarQube scanner omitido
+        if: env.SONAR_HOST_URL == '' || env.SONAR_TOKEN == ''
+        run: echo "SonarQube omitido: faltan SONAR_HOST_URL o SONAR_TOKEN en secrets."
 
       - name: Levantar Django para ZAP
         run: |

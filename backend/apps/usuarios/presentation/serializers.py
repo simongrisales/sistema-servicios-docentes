@@ -47,6 +47,16 @@ class RolSerializer(serializers.Serializer):
     description = serializers.CharField(label=_("Descripcion"))
 
 
+class RolInputSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=50, label=_("Codigo"))
+    name = serializers.CharField(max_length=100, label=_("Nombre"))
+    description = serializers.CharField(
+        allow_blank=True,
+        required=False,
+        label=_("Descripcion"),
+    )
+
+
 class TokenSerializer(serializers.Serializer):
     access = serializers.CharField(label=_("Token de acceso"))
     refresh = serializers.CharField(label=_("Token de renovacion"))

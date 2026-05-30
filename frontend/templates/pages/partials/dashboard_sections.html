@@ -1,4 +1,4 @@
-<section class="dashboard-shell">
+<section class="dashboard-shell" data-dashboard-role="{{ dashboard_role_code }}">
     <div class="stats-grid">
         {% for card in stats_cards %}
         <article class="card metric-card">
@@ -89,4 +89,573 @@
             {% endfor %}
         </ul>
     </article>
+
+    {% if dashboard_role_code == "administrador" %}
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Roles institucionales</p>
+                    <h3 class="card-title">Crear y revisar roles</h3>
+                </div>
+                <span class="badge badge-info">CRUD</span>
+            </div>
+            <form id="admin-role-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" name="code" placeholder="codigo del rol" required>
+                    <input class="input" name="name" placeholder="nombre visible" required>
+                </div>
+                <textarea class="textarea" name="description" placeholder="descripcion del rol"></textarea>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="submit">Guardar rol</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
+                </div>
+                <p class="form-status" id="admin-role-status"></p>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Lista de roles</p>
+                    <h3 class="card-title">Roles activos del sistema</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Descripcion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-roles-body">
+                        <tr><td colspan="3">Cargando roles...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Usuarios</p>
+                    <h3 class="card-title">Crear usuarios con rol</h3>
+                </div>
+                <span class="badge badge-success">JWT + Session</span>
+            </div>
+            <form id="admin-user-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" name="username" placeholder="usuario" required>
+                    <input class="input" type="email" name="email" placeholder="correo institucional" required>
+                    <input class="input" type="password" name="password" placeholder="contrasena" required>
+                    <select class="input" name="role_code" id="admin-user-role" required>
+                        <option value="">Selecciona un rol</option>
+                    </select>
+                    <input class="input" name="departamento" placeholder="departamento">
+                    <input class="input" name="cargo" placeholder="cargo">
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="submit">Crear usuario</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
+                </div>
+                <p class="form-status" id="admin-user-status"></p>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Usuarios activos</p>
+                    <h3 class="card-title">Cuentas registradas</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Correo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-body">
+                        <tr><td colspan="3">Cargando usuarios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Infraestructura</p>
+                    <h3 class="card-title">Crear aulas con capacidad</h3>
+                </div>
+                <span class="badge badge-warning">Capacidad</span>
+            </div>
+            <form id="admin-aula-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" name="nombre" placeholder="nombre del aula" required>
+                    <input class="input" type="number" name="capacidad" min="1" placeholder="capacidad" required>
+                    <input class="input" name="tipo" placeholder="tipo de aula" required>
+                    <label class="field-switch">
+                        <input type="checkbox" name="disponible" checked>
+                        <span>Disponible</span>
+                    </label>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="submit">Guardar aula</button>
+                </div>
+                <p class="form-status" id="admin-aula-status"></p>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Aulas</p>
+                    <h3 class="card-title">Capacidad y disponibilidad</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Aula</th>
+                            <th>Capacidad</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-aulas-body">
+                        <tr><td colspan="4">Cargando aulas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Catalogo</p>
+                    <h3 class="card-title">Crear parametros del sistema</h3>
+                </div>
+                <span class="badge badge-info">JSON</span>
+            </div>
+            <form id="admin-param-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" name="clave" placeholder="clave" required>
+                    <select class="input" name="grupo" required>
+                        <option value="general">General</option>
+                        <option value="asignacion">Asignacion</option>
+                        <option value="reservas">Reservas</option>
+                        <option value="reportes">Reportes</option>
+                        <option value="notificaciones">Notificaciones</option>
+                        <option value="seguridad">Seguridad</option>
+                    </select>
+                </div>
+                <textarea class="textarea" name="valor" placeholder='valor JSON, por ejemplo {"maximo": 40}' required></textarea>
+                <textarea class="textarea" name="descripcion" placeholder="descripcion"></textarea>
+                <label class="field-switch">
+                    <input type="checkbox" name="activo" checked>
+                    <span>Activo</span>
+                </label>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="submit">Guardar parametro</button>
+                </div>
+                <p class="form-status" id="admin-param-status"></p>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Parametrizacion</p>
+                    <h3 class="card-title">Valores activos</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Clave</th>
+                            <th>Grupo</th>
+                            <th>Valor</th>
+                            <th>Activo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-param-body">
+                        <tr><td colspan="4">Cargando parametros...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+    {% elif dashboard_role_code == "lider_sd" or dashboard_role_code == "lider_doc" %}
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Ejecucion real</p>
+                    <h3 class="card-title">Asignar una aula a un grupo</h3>
+                </div>
+                <span class="badge badge-success">Permiso lider</span>
+            </div>
+            <form id="leader-exec-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <select class="input" name="grupo_id" id="leader-grupo-select" required>
+                        <option value="">Selecciona un grupo</option>
+                    </select>
+                    <select class="input" name="aula_id" id="leader-aula-select" required>
+                        <option value="">Selecciona un aula</option>
+                    </select>
+                    <select class="input" name="bloque_horario_id" id="leader-bloque-select" required>
+                        <option value="">Selecciona un bloque</option>
+                    </select>
+                    <input class="input" name="semestre" value="2026-1" required>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="submit">Ejecutar asignacion</button>
+                </div>
+                <p class="form-status" id="leader-exec-status"></p>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Simulacion</p>
+                    <h3 class="card-title">Probar escenario con los datos actuales</h3>
+                </div>
+                <span class="badge badge-info">Strategy</span>
+            </div>
+            <form id="leader-sim-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" name="semestre" value="2026-1" required>
+                    <button class="btn btn-ghost" type="submit">Simular cobertura</button>
+                </div>
+                <p class="form-status" id="leader-sim-status"></p>
+            </form>
+            <div class="alert alert-info">
+                <strong>Cobertura</strong>
+                <p id="leader-cobertura-text">Cargando cobertura...</p>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Grupos y aulas</p>
+                    <h3 class="card-title">Datos para ejecutar la estrategia</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Estudiantes</th>
+                            <th>Semestre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leader-grupos-body">
+                        <tr><td colspan="3">Cargando grupos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Aulas disponibles</p>
+                    <h3 class="card-title">Capacidad y estado</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Aula</th>
+                            <th>Capacidad</th>
+                            <th>Disponible</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leader-aulas-body">
+                        <tr><td colspan="3">Cargando aulas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+    {% elif dashboard_role_code == "auxiliar_sd" or dashboard_role_code == "auxiliar_doc" %}
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Reservas</p>
+                    <h3 class="card-title">Crear reserva temporal</h3>
+                </div>
+                <span class="badge badge-warning">Temporal</span>
+            </div>
+            <form id="aux-reserva-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <select class="input" name="aula_id" id="aux-reserva-aula" required>
+                        <option value="">Selecciona un aula</option>
+                    </select>
+                    <input class="input" name="inicio" type="datetime-local" required>
+                    <input class="input" name="fin" type="datetime-local" required>
+                    <input class="input" name="solicitante_id" id="aux-reserva-solicitante" required>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="submit">Crear reserva</button>
+                </div>
+                <p class="form-status" id="aux-reserva-status"></p>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Aulas</p>
+                    <h3 class="card-title">Capacidad y disponibilidad</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Aula</th>
+                            <th>Capacidad</th>
+                            <th>Disponible</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aux-aulas-body">
+                        <tr><td colspan="3">Cargando aulas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Reservas activas</p>
+                    <h3 class="card-title">Confirmar o cancelar</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Reserva</th>
+                            <th>Aula</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aux-reservas-body">
+                        <tr><td colspan="4">Cargando reservas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Registro</p>
+                    <h3 class="card-title">Notas del auxiliar DOC</h3>
+                </div>
+            </div>
+            <div class="stack">
+                <div class="alert alert-info">
+                    <strong>Flujo operativo</strong>
+                    <p>Crear, confirmar y cancelar reservas desde un solo panel.</p>
+                </div>
+                <div class="alert alert-warning">
+                    <strong>Control de conflictos</strong>
+                    <p>Las reservas chocan con las validaciones de aula y horario del backend.</p>
+                </div>
+            </div>
+        </article>
+    </div>
+    {% elif dashboard_role_code == "facultad" %}
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Grupos</p>
+                    <h3 class="card-title">Registrar grupo de facultad</h3>
+                </div>
+                <span class="badge badge-info">Ingreso</span>
+            </div>
+            <form id="faculty-grupo-form" class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <select class="input" name="curso_id" id="faculty-curso-select" required>
+                        <option value="">Selecciona un curso</option>
+                    </select>
+                    <select class="input" name="docente_id" id="faculty-docente-select" required>
+                        <option value="">Selecciona un docente</option>
+                    </select>
+                    <input class="input" name="codigo" placeholder="codigo del grupo" required>
+                    <input class="input" type="number" name="num_estudiantes" min="0" placeholder="estudiantes" required>
+                    <input class="input" name="semestre" value="2026-1" required>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="submit">Guardar grupo</button>
+                </div>
+                <p class="form-status" id="faculty-grupo-status"></p>
+            </form>
+        </article>
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Aulas</p>
+                    <h3 class="card-title">Capacidad disponible para la facultad</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Aula</th>
+                            <th>Capacidad</th>
+                            <th>Disponible</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faculty-aulas-body">
+                        <tr><td colspan="3">Cargando aulas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Grupos ingresados</p>
+                    <h3 class="card-title">Cantidad de estudiantes y semestre</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Estudiantes</th>
+                            <th>Semestre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faculty-grupos-body">
+                        <tr><td colspan="3">Cargando grupos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Consulta</p>
+                    <h3 class="card-title">Docentes y cursos disponibles</h3>
+                </div>
+            </div>
+            <div class="stack">
+                <div class="alert alert-info">
+                    <strong>Docentes cargados</strong>
+                    <p id="faculty-docentes-text">Cargando docentes...</p>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Cursos cargados</strong>
+                    <p id="faculty-cursos-text">Cargando cursos...</p>
+                </div>
+            </div>
+        </article>
+    </div>
+    {% elif dashboard_role_code == "admisiones" %}
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Carga masiva</p>
+                    <h3 class="card-title">Registrar varios grupos</h3>
+                </div>
+                <span class="badge badge-success">Batch</span>
+            </div>
+            <form id="admissions-bulk-form" class="stack">
+                {% csrf_token %}
+                <textarea class="textarea" name="bulk_rows" id="admissions-bulk-rows" placeholder="Una linea por grupo: curso_id,docente_id,codigo,num_estudiantes,semestre"></textarea>
+                <div class="field-grid">
+                    <input class="input" name="semestre" value="2026-1" required>
+                    <button class="btn btn-primary" type="submit">Procesar lote</button>
+                </div>
+                <p class="form-status" id="admissions-bulk-status"></p>
+            </form>
+        </article>
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Progreso</p>
+                    <h3 class="card-title">Avance de validacion</h3>
+                </div>
+                <span class="badge badge-info" id="admissions-progress-text">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-bar__fill" id="admissions-progress-fill" style="width: 0%;"></div>
+            </div>
+            <div class="stack" style="margin-top: 1rem;">
+                <div class="alert alert-success">
+                    <strong>Proceso de admisiones</strong>
+                    <p>La interfaz enviara cada grupo al backend y mostrara el progreso real.</p>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <p class="card-subtitle">Grupos cargados</p>
+                <h3 class="card-title">Cantidad real de estudiantes</h3>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Estudiantes</th>
+                        <th>Semestre</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="admissions-grupos-body">
+                    <tr><td colspan="4">Cargando grupos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+    {% endif %}
 </section>

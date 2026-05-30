@@ -1,47 +1,86 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Dashboard SDS UCO{% endblock %}
 
 {% block content %}
-<section class="dashboard-shell">
-    <header class="dashboard-hero">
-        <div>
+<section class="dashboard-shell dashboard-shell--landing">
+    <header class="dashboard-hero dashboard-hero--landing">
+        <div class="dashboard-hero__copy">
             <span class="dashboard-kicker">Sistema de Servicios Docentes</span>
-            <h2>Selecciona el panel de trabajo</h2>
-            <p class="section-lead">Cada rol tiene su propio dashboard, con las acciones y visibilidad que necesita para operar sin fricciones.</p>
+            <h2>Selecciona el panel de trabajo segun tu rol</h2>
+            <p class="section-lead">
+                Accede a una experiencia visual clara para Administrador, Lider DOC, Auxiliar DOC,
+                Facultad y Admisiones, con la misma base institucional del prototipo.
+            </p>
         </div>
         <div class="hero-actions">
-            <a class="btn btn-primary" href="{% url 'dashboard_administrador' %}">Administrador</a>
-            <a class="btn btn-ghost" href="{% url 'dashboard_lider_doc' %}">Lider DOC</a>
+            <a class="btn btn-primary" href="{% url 'dashboard_administrador' %}">Entrar como Administrador</a>
+            <a class="btn btn-ghost" href="{% url 'login' %}">Volver al login</a>
         </div>
     </header>
 
-    <div class="dashboard-grid three-cols">
-        <a class="card" href="{% url 'dashboard_administrador' %}">
-            <p class="card-subtitle">Rol 1</p>
-            <h3 class="card-title">Administrador</h3>
-            <p class="support-note">Usuarios, reglas, logs y metricas del sistema.</p>
-        </a>
-        <a class="card" href="{% url 'dashboard_lider_doc' %}">
-            <p class="card-subtitle">Rol 2</p>
-            <h3 class="card-title">Lider DOC</h3>
-            <p class="support-note">Asignacion automatica, simulacion y cobertura.</p>
-        </a>
-        <a class="card" href="{% url 'dashboard_auxiliar_doc' %}">
-            <p class="card-subtitle">Rol 3</p>
-            <h3 class="card-title">Auxiliar DOC</h3>
-            <p class="support-note">Asignaciones parciales, reservas y calendario.</p>
-        </a>
-        <a class="card" href="{% url 'dashboard_facultad' %}">
-            <p class="card-subtitle">Rol 4</p>
-            <h3 class="card-title">Facultad</h3>
-            <p class="support-note">Ingreso de grupos, disponibilidad y consulta de aulas.</p>
-        </a>
-        <a class="card" href="{% url 'dashboard_admisiones' %}">
-            <p class="card-subtitle">Rol 5</p>
-            <h3 class="card-title">Admisiones</h3>
-            <p class="support-note">Carga masiva, progreso y cobertura de grupos.</p>
-        </a>
+    <div class="dashboard-stage">
+        <article class="card dashboard-stage__panel">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Vista principal</p>
+                    <h3 class="card-title">Accesos por rol</h3>
+                </div>
+                <span class="badge badge-info">UCO</span>
+            </div>
+
+            <div class="dashboard-grid dashboard-grid--roles">
+                <a class="role-card" href="{% url 'dashboard_administrador' %}">
+                    <span class="role-card__eyebrow">Rol 1</span>
+                    <strong>Administrador</strong>
+                    <p>Usuarios, reglas configurables, logs y metricas.</p>
+                </a>
+                <a class="role-card" href="{% url 'dashboard_lider_doc' %}">
+                    <span class="role-card__eyebrow">Rol 2</span>
+                    <strong>Lider DOC</strong>
+                    <p>Asignacion automatica, simulacion y cobertura.</p>
+                </a>
+                <a class="role-card" href="{% url 'dashboard_auxiliar_doc' %}">
+                    <span class="role-card__eyebrow">Rol 3</span>
+                    <strong>Auxiliar DOC</strong>
+                    <p>Asignaciones parciales, reservas y calendario.</p>
+                </a>
+                <a class="role-card" href="{% url 'dashboard_facultad' %}">
+                    <span class="role-card__eyebrow">Rol 4</span>
+                    <strong>Facultad</strong>
+                    <p>Ingreso de grupos, disponibilidad y consulta de aulas.</p>
+                </a>
+                <a class="role-card" href="{% url 'dashboard_admisiones' %}">
+                    <span class="role-card__eyebrow">Rol 5</span>
+                    <strong>Admisiones</strong>
+                    <p>Carga masiva, progreso y cobertura de grupos.</p>
+                </a>
+            </div>
+        </article>
+
+        <aside class="card dashboard-stage__aside">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Guia rapida</p>
+                    <h3 class="card-title">Orden recomendado para la demo</h3>
+                </div>
+            </div>
+            <ol class="demo-steps">
+                <li>Ingresar con un usuario base.</li>
+                <li>Mostrar el dashboard correspondiente al rol.</li>
+                <li>Revisar acceso a Prometheus, Grafana y notificaciones.</li>
+                <li>Validar que cada rol quede aislado de los demas.</li>
+            </ol>
+
+            <div class="brand-stamp">
+                <img src="{% static 'images/logo-uco.png' %}" alt="UCO">
+                <div>
+                    <strong>UCO</strong>
+                    <p>Asignacion academica institucional</p>
+                </div>
+            </div>
+        </aside>
     </div>
 </section>
 {% endblock %}

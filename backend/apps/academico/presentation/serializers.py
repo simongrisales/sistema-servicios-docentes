@@ -17,6 +17,32 @@ class AulaOutputSerializer(serializers.Serializer):
     disponible = serializers.BooleanField(label=_("Disponible"))
 
 
+class DocenteOutputSerializer(serializers.Serializer):
+    id = serializers.UUIDField(label=_("ID"))
+    nombre = serializers.CharField(label=_("Nombre"))
+    email = serializers.EmailField(label=_("Correo electronico"))
+    activo = serializers.BooleanField(label=_("Activo"))
+
+
+class CursoOutputSerializer(serializers.Serializer):
+    id = serializers.UUIDField(label=_("ID"))
+    programa_id = serializers.UUIDField(label=_("Programa"))
+    codigo = serializers.CharField(label=_("Codigo"))
+    nombre = serializers.CharField(label=_("Nombre"))
+    creditos = serializers.IntegerField(label=_("Creditos"))
+    activo = serializers.BooleanField(label=_("Activo"))
+
+
+class GrupoOutputSerializer(serializers.Serializer):
+    id = serializers.UUIDField(label=_("ID"))
+    curso_id = serializers.UUIDField(label=_("Curso"))
+    docente_id = serializers.UUIDField(label=_("Docente"))
+    codigo = serializers.CharField(label=_("Codigo"))
+    num_estudiantes = serializers.IntegerField(label=_("Numero de estudiantes"))
+    semestre = serializers.CharField(label=_("Semestre"))
+    activo = serializers.BooleanField(label=_("Activo"))
+
+
 class GrupoSerializer(serializers.Serializer):
     curso_id = serializers.UUIDField(label=_("Curso"))
     docente_id = serializers.UUIDField(label=_("Docente"))

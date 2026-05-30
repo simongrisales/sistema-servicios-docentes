@@ -8,7 +8,7 @@
     <link href="{% static 'css/tailwind.css' %}" rel="stylesheet">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="{% block body_class %}uco-shell{% endblock %}">
+<body class="{% block body_class %}uco-shell{% endblock %}" data-user-id="{{ dashboard_user_id|default:'' }}">
     {% block layout %}
     <div class="app-frame">
         {% include "partials/sidebar.html" %}
@@ -28,6 +28,7 @@
     <script src="{% static 'js/alpine.min.js' %}"></script>
     <script src="{% static 'js/sds/apiClient.js' %}"></script>
     <script src="{% static 'js/sds/toast.js' %}"></script>
+    <script src="{% static 'js/sds/dashboard-runtime.js' %}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -1,10 +1,18 @@
+{% load static %}
 <header class="navbar-shell">
     <div class="navbar-branding">
-        <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Alternar navegación">
+        <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Alternar navegacion">
             <span></span>
             <span></span>
             <span></span>
         </button>
+        <a class="brand-mark brand-mark--compact" href="{% url 'dashboard' %}">
+            <img src="{% static 'images/logo-uco.png' %}" alt="UCO" class="brand-mark__logo">
+            <div>
+                <p class="brand-mark__eyebrow">Sistema SDS</p>
+                <h1 class="brand-mark__title">{{ dashboard_brand|default:"Sistema de Servicios Docentes" }}</h1>
+            </div>
+        </a>
         <div>
             <p class="navbar-kicker">{{ dashboard_brand|default:"Sistema de Servicios Docentes" }}</p>
             <h1 class="navbar-title">{{ page_title|default:"Dashboard" }}</h1>

@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import RedirectView, TemplateView
 from django_recaptcha.fields import ReCaptchaField
-from django_recaptcha.widgets import ReCaptchaV3
+from django_recaptcha.widgets import ReCaptchaV2Checkbox, ReCaptchaV3
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -16,8 +16,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from ..application.dtos import UsuarioInputDTO
 from ..application.use_cases import CrearUsuario, ListarRoles, ListarUsuarios
+from ..infrastructure.models import RoleModel
+from ..infrastructure.permissions import EsAdministrador
 from ..infrastructure.repositories import UsuariosRepository
-from .serializers import RolSerializer, UsuarioSerializer
+from .serializers import RolInputSerializer, RolSerializer, UsuarioSerializer
 
 ROLE_DASHBOARD_URLS = {
     "administrador": "dashboard_administrador",
@@ -53,19 +55,28 @@ class LoginView(TokenObtainPairView):
 class LoginPageView(TemplateView):
     template_name = "usuarios/login.html"
 
+    def _captcha_widget(self):
+        if settings.DEBUG:
+            return ReCaptchaV2Checkbox()
+        return ReCaptchaV3(action="login")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["recaptcha_site_key"] = settings.RECAPTCHA_PUBLIC_KEY
+        context["recaptcha_mode"] = "v2" if settings.DEBUG else "v3"
         return context
 
     def post(self, request, *args, **kwargs):
-        recaptcha_token = request.POST.get("recaptcha_token", "")
+        recaptcha_token = (
+            request.POST.get("recaptcha_token", "")
+            or request.POST.get("g-recaptcha-response", "")
+        )
         username = request.POST.get("username", "")
         password = request.POST.get("password", "")
 
         if recaptcha_token:
-            field = ReCaptchaField(widget=ReCaptchaV3(action="login"))
-            field.clean(recaptcha_token, None)
+            field = ReCaptchaField(widget=self._captcha_widget())
+            field.clean(recaptcha_token)
 
         user = authenticate(request, username=username, password=password)
         if user is None:
@@ -116,11 +127,14 @@ class LoginConRecaptchaView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         """Valida recaptcha_token cuando aplica y luego autentica con simplejwt."""
-        recaptcha_token = request.data.get("recaptcha_token", "")
+        recaptcha_token = request.data.get("recaptcha_token", "") or request.data.get(
+            "g-recaptcha-response", ""
+        )
 
         if recaptcha_token:
-            field = ReCaptchaField(widget=ReCaptchaV3(action="login"))
-            field.clean(recaptcha_token, None)
+            widget = ReCaptchaV2Checkbox() if settings.DEBUG else ReCaptchaV3(action="login")
+            field = ReCaptchaField(widget=widget)
+            field.clean(recaptcha_token)
         return super().post(request, *args, **kwargs)
 
 
@@ -156,8 +170,30 @@ class UsuarioViewSet(viewsets.ViewSet):
         roles = ListarRoles(self._repo()).execute()
         return Response(RolSerializer(roles, many=True).data)
 
+    @action(detail=False, methods=["post"], url_path="roles")
+    def crear_rol(self, request):
+        if not EsAdministrador().has_permission(request, self):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        serializer = RolInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        role, _ = RoleModel.objects.update_or_create(
+            code=serializer.validated_data["code"],
+            defaults={
+                "name": serializer.validated_data["name"],
+                "description": serializer.validated_data.get("description", ""),
+            },
+        )
+        payload = {
+            "role_id": role.id,
+            "code": role.code or "",
+            "name": role.name,
+            "description": role.description,
+        }
+        return Response(payload, status=status.HTTP_201_CREATED)
+
 
 class BaseDashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "pages/dashboard.html"
     required_role_code: str | None = None
     dashboard_url_name = "dashboard_administrador"
     page_title = _("Dashboard")
@@ -192,6 +228,7 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
                 "dashboard_url_name": self.dashboard_url_name,
                 "dashboard_role_code": user_role,
                 "dashboard_role_label": dashboard_label_for_role(user_role),
+                "dashboard_user_id": getattr(self.request.user, "id", ""),
                 "dashboard_sidebar_items": self.sidebar_items,
                 "dashboard_notifications_count": 3,
                 "grafana_url": f"http://localhost:{settings.GRAFANA_PORT}",
@@ -215,6 +252,7 @@ class DashboardRedirectView(LoginRequiredMixin, RedirectView):
 
 
 class AdministradorDashboardView(BaseDashboardView):
+    template_name = "pages/dashboard_administrador.html"
     required_role_code = "administrador"
     dashboard_url_name = "dashboard_administrador"
     page_title = _("Dashboard Administrador")
@@ -328,6 +366,7 @@ class AdministradorDashboardView(BaseDashboardView):
 
 
 class LiderDocDashboardView(BaseDashboardView):
+    template_name = "pages/dashboard_lider_doc.html"
     required_role_code = "lider_sd"
     dashboard_url_name = "dashboard_lider_doc"
     page_title = _("Dashboard Lider DOC")
@@ -417,6 +456,7 @@ class LiderDocDashboardView(BaseDashboardView):
 
 
 class AuxiliarDocDashboardView(BaseDashboardView):
+    template_name = "pages/dashboard_auxiliar_doc.html"
     required_role_code = "auxiliar_sd"
     dashboard_url_name = "dashboard_auxiliar_doc"
     page_title = _("Dashboard Auxiliar DOC")
@@ -512,6 +552,7 @@ class AuxiliarDocDashboardView(BaseDashboardView):
 
 
 class FacultadDashboardView(BaseDashboardView):
+    template_name = "pages/dashboard_facultad.html"
     required_role_code = "facultad"
     dashboard_url_name = "dashboard_facultad"
     page_title = _("Dashboard Facultad")
@@ -591,6 +632,7 @@ class FacultadDashboardView(BaseDashboardView):
 
 
 class AdmisionesDashboardView(BaseDashboardView):
+    template_name = "pages/dashboard_admisiones.html"
     required_role_code = "admisiones"
     dashboard_url_name = "dashboard_admisiones"
     page_title = _("Dashboard Admisiones")
