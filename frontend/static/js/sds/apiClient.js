@@ -4,10 +4,6 @@
     return el ? el.value : '';
   };
 
-  const getAccessToken = () => {
-    return localStorage.getItem('sds_access_token') || '';
-  };
-
   const buildHeaders = (extraHeaders) => {
     const headers = Object.assign(
       {
@@ -19,11 +15,6 @@
     const csrf = getCsrfToken();
     if (csrf && !headers['X-CSRFToken']) {
       headers['X-CSRFToken'] = csrf;
-    }
-
-    const access = getAccessToken();
-    if (access && !headers.Authorization) {
-      headers.Authorization = `Bearer ${access}`;
     }
 
     return headers;

@@ -63,7 +63,7 @@ class UsuariosViewsTests(APITestCase):
                     {
                         "username": username,
                         "password": "admin123",
-                        "recaptcha_token": "",
+                        "recaptcha_token": "PASSED",
                     },
                 )
 
@@ -82,12 +82,27 @@ class UsuariosViewsTests(APITestCase):
             {
                 "username": "nadie",
                 "password": "mala",
-                "recaptcha_token": "",
+                "recaptcha_token": "PASSED",
             },
         )
 
         assert response.status_code == status.HTTP_200_OK
         assert "Credenciales invalidas" in response.content.decode()
+
+    def test_login_web_requiere_recaptcha(self):
+        self._create_user("admin_recaptcha", RolSistema.ADMINISTRADOR)
+
+        response = self.client.post(
+            "/login/",
+            {
+                "username": "admin_recaptcha",
+                "password": "admin123",
+                "recaptcha_token": "",
+            },
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "Completa el captcha" in response.content.decode()
 
     def test_token_jwt_exitoso_y_fallido(self):
         self._create_user("jwt_admin", RolSistema.ADMINISTRADOR)
@@ -108,6 +123,18 @@ class UsuariosViewsTests(APITestCase):
         assert "refresh" in ok.data
         assert invalid.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_token_jwt_con_recaptcha_requiere_token(self):
+        self._create_user("jwt_captcha", RolSistema.ADMINISTRADOR)
+
+        response = self.client.post(
+            "/api/token/recaptcha/",
+            {"username": "jwt_captcha", "password": "admin123"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Completa el captcha" in response.data["detail"]
+
     def test_logout_revoca_refresh_token_y_elimina_cookies(self):
         self._create_user("admin_logout", RolSistema.ADMINISTRADOR)
 
@@ -116,7 +143,7 @@ class UsuariosViewsTests(APITestCase):
             {
                 "username": "admin_logout",
                 "password": "admin123",
-                "recaptcha_token": "",
+                "recaptcha_token": "PASSED",
             },
         )
         self.client.cookies["refresh_token"] = login_response.cookies[
@@ -142,7 +169,7 @@ class UsuariosViewsTests(APITestCase):
             {
                 "username": "admin_blacklist",
                 "password": "admin123",
-                "recaptcha_token": "",
+                "recaptcha_token": "PASSED",
             },
         )
         refresh_token = login_response.cookies["refresh_token"].value

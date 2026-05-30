@@ -6,6 +6,27 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    const sidebarLinks = Array.from(document.querySelectorAll(".sidebar-link[href^='#']"));
+    const syncSidebarActive = () => {
+        if (!sidebarLinks.length) {
+            return;
+        }
+        const targetHash = window.location.hash || sidebarLinks[0].getAttribute("href") || "";
+        sidebarLinks.forEach((link) => {
+            link.classList.toggle("is-active", link.getAttribute("href") === targetHash);
+        });
+    };
+
+    sidebarLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+            window.requestAnimationFrame(syncSidebarActive);
+            sidebar?.classList.remove("is-open");
+        });
+    });
+
+    window.addEventListener("hashchange", syncSidebarActive);
+    syncSidebarActive();
+
     const viewButtons = document.querySelectorAll("[data-dashboard-view]");
     const panels = document.querySelectorAll("[data-dashboard-panel]");
 
@@ -40,8 +61,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    document.querySelectorAll("[data-toast-close]").forEach((button) => {
-        button.addEventListener("click", () => window.hideToast());
+    document.addEventListener("click", (event) => {
+        const closeButton = event.target.closest?.("[data-toast-close]");
+        if (closeButton) {
+            window.hideToast();
+        }
     });
 });
 

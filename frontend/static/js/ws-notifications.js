@@ -8,6 +8,15 @@
         const socketUrl = `${protocol}://${window.location.host}/ws/notificaciones/`;
         const disponibilidadUrl = `${protocol}://${window.location.host}/ws/disponibilidad-aulas/`;
         const progresoUrl = `${protocol}://${window.location.host}/ws/asignacion/progreso/`;
+        const syncUrl = `${protocol}://${window.location.host}/ws/panel/sync/`;
+
+        const emitRefreshEvent = (payload) => {
+            window.dispatchEvent(
+                new CustomEvent("sds:catalog-changed", {
+                    detail: payload || {},
+                })
+            );
+        };
 
         try {
             const socket = new WebSocket(socketUrl);
@@ -36,11 +45,17 @@
                 if (payload.tipo === "aula_actualizada") {
                     updateAulaBadge(payload);
                 }
+
+                if (payload.tipo === "notification" || payload.tipo === "aula_actualizada") {
+                    emitRefreshEvent(payload);
+                }
             });
 
             const disponibilidadSocket = new WebSocket(disponibilidadUrl);
             disponibilidadSocket.addEventListener("message", (event) => {
-                updateAulaBadge(JSON.parse(event.data));
+                const payload = JSON.parse(event.data);
+                updateAulaBadge(payload);
+                emitRefreshEvent(payload);
             });
 
             const progresoSocket = new WebSocket(progresoUrl);
@@ -56,6 +71,22 @@
                 document.querySelectorAll("[data-grupos-procesados]").forEach((node) => {
                     node.textContent = String(payload.grupos_procesados);
                 });
+                window.dispatchEvent(
+                    new CustomEvent("sds:progress-updated", {
+                        detail: payload,
+                    })
+                );
+            });
+
+            const syncSocket = new WebSocket(syncUrl);
+            syncSocket.addEventListener("message", (event) => {
+                let payload = {};
+                try {
+                    payload = JSON.parse(event.data);
+                } catch (error) {
+                    payload = { tipo: "catalogo_actualizado", mensaje: event.data };
+                }
+                emitRefreshEvent(payload);
             });
         } catch (error) {
             window.console && window.console.warn && console.warn("No fue posible iniciar el canal WebSocket.", error);

@@ -21,6 +21,13 @@
     parametros: [],
   };
 
+  let refreshTimer = null;
+  let adminBound = false;
+  let leaderBound = false;
+  let auxiliarBound = false;
+  let facultyBound = false;
+  let admissionsBound = false;
+
   const esc = (value) =>
     String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -124,6 +131,34 @@
     state.parametros = parametros;
   };
 
+  const renderCurrentPanel = () => {
+    if (role === 'administrador') {
+      renderAdmin();
+    } else if (role === 'lider_sd' || role === 'lider_doc') {
+      renderLeader();
+    } else if (role === 'auxiliar_sd' || role === 'auxiliar_doc') {
+      renderAuxiliar();
+    } else if (role === 'facultad') {
+      renderFaculty();
+    } else if (role === 'admisiones') {
+      renderAdmissions();
+    }
+  };
+
+  const refreshCurrentPanel = async () => {
+    await loadCatalog();
+    renderCurrentPanel();
+  };
+
+  const scheduleRefresh = () => {
+    window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(() => {
+      refreshCurrentPanel().catch((error) => {
+        toast('error', error.details || error.message || 'No se pudo refrescar el panel.');
+      });
+    }, 180);
+  };
+
   const refreshLeaderCoverage = async (semestre) => {
     const data = await fetchJson(`/api/asignacion/cobertura/?semestre=${encodeURIComponent(semestre)}`);
     const total = Number(data?.total_grupos || 0);
@@ -190,6 +225,8 @@
   };
 
   const bindAdmin = () => {
+    if (adminBound) return;
+    adminBound = true;
     const roleForm = document.getElementById('admin-role-form');
     const userForm = document.getElementById('admin-user-form');
     const aulaForm = document.getElementById('admin-aula-form');
@@ -203,7 +240,7 @@
         showStatus('admin-role-status', 'Rol guardado correctamente.', 'success');
         toast('success', 'Rol guardado correctamente.');
         await loadCatalog();
-        renderAdmin();
+        await refreshCurrentPanel();
       } catch (error) {
         showStatus('admin-role-status', error.details || error.message, 'error');
         toast('error', error.details || 'No se pudo guardar el rol.');
@@ -218,7 +255,7 @@
         showStatus('admin-user-status', 'Usuario creado correctamente.', 'success');
         toast('success', 'Usuario creado correctamente.');
         await loadCatalog();
-        renderAdmin();
+        await refreshCurrentPanel();
       } catch (error) {
         showStatus('admin-user-status', error.details || error.message, 'error');
         toast('error', error.details || 'No se pudo crear el usuario.');
@@ -235,7 +272,7 @@
         showStatus('admin-aula-status', 'Aula creada correctamente.', 'success');
         toast('success', 'Aula creada correctamente.');
         await loadCatalog();
-        renderAdmin();
+        await refreshCurrentPanel();
       } catch (error) {
         showStatus('admin-aula-status', error.details || error.message, 'error');
         toast('error', error.details || 'No se pudo crear el aula.');
@@ -257,7 +294,7 @@
         showStatus('admin-param-status', 'Parametro guardado correctamente.', 'success');
         toast('success', 'Parametro guardado correctamente.');
         await loadCatalog();
-        renderAdmin();
+        await refreshCurrentPanel();
       } catch (error) {
         showStatus('admin-param-status', error.details || error.message, 'error');
         toast('error', error.details || 'No se pudo guardar el parametro.');
@@ -306,6 +343,8 @@
   };
 
   const bindLeader = () => {
+    if (leaderBound) return;
+    leaderBound = true;
     const execForm = document.getElementById('leader-exec-form');
     const simForm = document.getElementById('leader-sim-form');
     const semesterAssignButton = document.getElementById('leader-semester-assign');
@@ -317,6 +356,7 @@
         const result = await postJson('/api/asignacion/ejecutar/', data);
         showStatus('leader-exec-status', `Asignacion confirmada para ${result.semestre}.`, 'success');
         toast('success', 'Asignacion ejecutada correctamente.');
+        await refreshCurrentPanel();
         await refreshLeaderCoverage(data.semestre);
       } catch (error) {
         showStatus('leader-exec-status', error.details || error.message, 'error');
@@ -339,6 +379,7 @@
           pendientes > 0 ? 'warning' : 'success'
         );
         toast('success', 'Simulacion ejecutada.');
+        await refreshCurrentPanel();
         await refreshLeaderCoverage(data.semestre);
       } catch (error) {
         showStatus('leader-sim-status', error.details || error.message, 'error');
@@ -359,8 +400,7 @@
           pendientes > 0 ? 'warning' : 'success'
         );
         toast(pendientes > 0 ? 'warning' : 'success', 'Asignacion de semestre finalizada.');
-        await loadCatalog();
-        renderLeader();
+        await refreshCurrentPanel();
         await refreshLeaderCoverage(data.semestre);
       } catch (error) {
         showStatus('leader-sim-status', error.details || error.message, 'error');
@@ -444,6 +484,8 @@
   };
 
   const bindAuxiliar = () => {
+    if (auxiliarBound) return;
+    auxiliarBound = true;
     const form = document.getElementById('aux-reserva-form');
     form?.addEventListener('submit', async (evt) => {
       evt.preventDefault();
@@ -457,8 +499,7 @@
         await postJson('/api/reservas/', data);
         showStatus('aux-reserva-status', 'Reserva creada correctamente.', 'success');
         toast('success', 'Reserva creada correctamente.');
-        await loadCatalog();
-        renderAuxiliar();
+        await refreshCurrentPanel();
       } catch (error) {
         showStatus('aux-reserva-status', error.details || error.message, 'error');
         toast('error', error.details || 'No se pudo crear la reserva.');
@@ -512,6 +553,8 @@
   };
 
   const bindFaculty = () => {
+    if (facultyBound) return;
+    facultyBound = true;
     const form = document.getElementById('faculty-grupo-form');
     form?.addEventListener('submit', async (evt) => {
       evt.preventDefault();
@@ -521,8 +564,7 @@
         await postJson('/api/academico/aulas/grupos/', data);
         showStatus('faculty-grupo-status', 'Grupo guardado correctamente.', 'success');
         toast('success', 'Grupo guardado correctamente.');
-        await loadCatalog();
-        renderFaculty();
+        await refreshCurrentPanel();
       } catch (error) {
         showStatus('faculty-grupo-status', error.details || error.message, 'error');
         toast('error', error.details || 'No se pudo guardar el grupo.');
@@ -544,6 +586,8 @@
   };
 
   const bindAdmissions = () => {
+    if (admissionsBound) return;
+    admissionsBound = true;
     const form = document.getElementById('admissions-bulk-form');
     form?.addEventListener('submit', async (evt) => {
       evt.preventDefault();
@@ -590,38 +634,40 @@
         errorCount > 0 ? 'warning' : 'success'
       );
       toast(errorCount > 0 ? 'warning' : 'success', 'Procesamiento de lote finalizado.');
-      await loadCatalog();
-      renderAdmissions();
+      await refreshCurrentPanel();
     });
   };
 
   const boot = async () => {
     try {
-      await loadCatalog();
+      await refreshCurrentPanel();
       if (role === 'administrador') {
-        renderAdmin();
         bindAdmin();
       } else if (role === 'lider_sd' || role === 'lider_doc') {
-        renderLeader();
         bindLeader();
         const semesterInput = document.querySelector('#leader-sim-form input[name="semestre"]');
         if (semesterInput?.value) {
           await refreshLeaderCoverage(semesterInput.value);
         }
       } else if (role === 'auxiliar_sd' || role === 'auxiliar_doc') {
-        renderAuxiliar();
         bindAuxiliar();
       } else if (role === 'facultad') {
-        renderFaculty();
         bindFaculty();
       } else if (role === 'admisiones') {
-        renderAdmissions();
         bindAdmissions();
       }
     } catch (error) {
       toast('error', error.details || error.message || 'No se pudo cargar el panel.');
     }
   };
+
+  window.addEventListener('sds:catalog-changed', (event) => {
+    const payload = event.detail || {};
+    if (payload.tipo === 'progreso') {
+      return;
+    }
+    scheduleRefresh();
+  });
 
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', boot, { once: true });

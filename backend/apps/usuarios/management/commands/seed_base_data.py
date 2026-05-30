@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 
 from apps.usuarios.infrastructure.models import RoleModel
 
-DEMO_PASSWORD = "UcoDemo2026*"
+DEMO_PASSWORD = "uco2026*"
 
 ROLES = [
     ("administrador", "Administrador", "Gestion del sistema y auditoria."),
@@ -17,11 +17,11 @@ ROLES = [
 ]
 
 DEMO_USERS = [
-    ("admin.sds", "admin.sds@uco.edu.co", "administrador", "TI"),
-    ("lider.sd", "lider.sd@uco.edu.co", "lider_sd", "Servicios Docentes"),
-    ("auxiliar.sd", "auxiliar.sd@uco.edu.co", "auxiliar_sd", "Servicios Docentes"),
-    ("facultad.ing", "facultad.ing@uco.edu.co", "facultad", "Facultad Ingenieria"),
-    ("admisiones", "admisiones@uco.edu.co", "admisiones", "Admisiones"),
+    ("adminsd", "adminsd@uco.edu.co", "administrador", "TI"),
+    ("lidersd", "lidersd@uco.edu.co", "lider_sd", "Servicios Docentes"),
+    ("auxisd", "auxisd@uco.edu.co", "auxiliar_sd", "Servicios Docentes"),
+    ("facultaduco", "facultaduco@uco.edu.co", "facultad", "Facultad Ingenieria"),
+    ("admisionuco", "admisionuco@uco.edu.co", "admisiones", "Admisiones"),
 ]
 
 FACULTADES = [

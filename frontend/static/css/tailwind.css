@@ -363,6 +363,10 @@ body.uco-shell {
     box-shadow: var(--shadow);
 }
 
+.dashboard-shell .card[id] {
+    scroll-margin-top: 7rem;
+}
+
 .card-header {
     display: flex;
     align-items: start;
@@ -452,6 +456,24 @@ body.uco-shell {
     color: var(--text);
     padding: 0.75rem 0.9rem;
     outline: none;
+}
+
+.dashboard-shell .input,
+.dashboard-shell .select,
+.dashboard-shell .textarea {
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--uco-ink);
+    border-color: rgba(16, 49, 38, 0.16);
+}
+
+.dashboard-shell .input::placeholder,
+.dashboard-shell .textarea::placeholder {
+    color: #6b7d74;
+}
+
+.dashboard-shell .select option,
+.dashboard-shell .input option {
+    color: var(--uco-ink);
 }
 
 .textarea {
@@ -566,6 +588,8 @@ body.uco-shell {
     background: transparent;
     color: var(--muted);
     font-size: 1.3rem;
+    cursor: pointer;
+    line-height: 1;
 }
 
 .dashboard-column {

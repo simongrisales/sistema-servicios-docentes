@@ -6,6 +6,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from apps.asignacion.infrastructure.tasks import recalculo_automatico_task
+from apps.notificaciones.infrastructure.broadcasts import broadcast_panel_sync
 
 from .models import AulaModel, GrupoModel
 
@@ -57,11 +58,39 @@ def _broadcast_disponibilidad_aula(
     if channel_layer is None:
         return
 
-    async_to_sync(channel_layer.group_send)(
-        "disponibilidad_aulas",
-        {
-            "type": "aula.actualizada",
+    try:
+        async_to_sync(channel_layer.group_send)(
+            "disponibilidad_aulas",
+            {
+                "type": "aula.actualizada",
+                "aula_id": str(instance.pk),
+                "disponible": instance.disponible,
+            },
+        )
+    except Exception:
+        pass
+    broadcast_panel_sync(
+        entidad="aulas",
+        accion="actualizada",
+        detalle=f"Aula {instance.nombre} sincronizada.",
+        payload={
             "aula_id": str(instance.pk),
             "disponible": instance.disponible,
+        },
+    )
+
+
+@receiver(post_save, sender=GrupoModel)
+def _broadcast_grupo_sync(
+    sender, instance: GrupoModel, created: bool, **kwargs
+) -> None:  # pragma: no cover - puente WebSocket
+    broadcast_panel_sync(
+        entidad="grupos",
+        accion="creado" if created else "actualizado",
+        detalle=f"Grupo {instance.codigo} sincronizado.",
+        payload={
+            "grupo_id": str(instance.pk),
+            "semestre": instance.semestre,
+            "num_estudiantes": instance.num_estudiantes,
         },
     )

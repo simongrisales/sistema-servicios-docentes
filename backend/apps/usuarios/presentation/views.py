@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -14,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.notificaciones.infrastructure.models import NotificacionModel
 from ..application.dtos import UsuarioInputDTO
 from ..application.use_cases import CrearUsuario, ListarRoles, ListarUsuarios
 from ..infrastructure.models import RoleModel
@@ -48,6 +50,21 @@ def dashboard_label_for_role(role_code: str | None) -> str:
     return ROLE_LABELS.get((role_code or "").lower(), _("Administrador"))
 
 
+def _validate_recaptcha_or_raise(token: str, widget_factory) -> None:
+    if not token:
+        raise ValueError(_("Completa el captcha antes de ingresar."))
+
+    if settings.RECAPTCHA_TESTING_MODE and token.upper() == "PASSED":
+        return
+
+    field = ReCaptchaField(widget=widget_factory())
+    try:
+        field.clean(token)
+    except ValidationError as exc:
+        message = exc.messages[0] if getattr(exc, "messages", None) else _("Captcha invalido.")
+        raise ValueError(message) from exc
+
+
 class LoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
 
@@ -73,9 +90,12 @@ class LoginPageView(TemplateView):
         username = request.POST.get("username", "")
         password = request.POST.get("password", "")
 
-        if recaptcha_token:
-            field = ReCaptchaField(widget=self._captcha_widget())
-            field.clean(recaptcha_token)
+        try:
+            _validate_recaptcha_or_raise(recaptcha_token, self._captcha_widget)
+        except ValueError as exc:
+            return self.render_to_response(
+                self.get_context_data(error_message=str(exc))
+            )
 
         user = authenticate(request, username=username, password=password)
         if user is None:
@@ -130,12 +150,18 @@ class LoginConRecaptchaView(TokenObtainPairView):
             "g-recaptcha-response", ""
         )
 
-        if recaptcha_token:
-            widget = (
-                ReCaptchaV2Checkbox() if settings.DEBUG else ReCaptchaV3(action="login")
+        try:
+            _validate_recaptcha_or_raise(
+                recaptcha_token,
+                lambda: ReCaptchaV2Checkbox()
+                if settings.DEBUG
+                else ReCaptchaV3(action="login"),
             )
-            field = ReCaptchaField(widget=widget)
-            field.clean(recaptcha_token)
+        except ValueError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return super().post(request, *args, **kwargs)
 
 
@@ -221,6 +247,13 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user_role = (getattr(self.request.user, "role_code", "") or "").lower()
+        notifications_count = 0
+        if getattr(self.request.user, "is_authenticated", False):
+            notifications_count = NotificacionModel.objects.filter(
+                usuario_destino_id=self.request.user.id,
+                es_leida=False,
+                activo=True,
+            ).count()
         context.update(
             {
                 "page_title": self.page_title,
@@ -231,7 +264,7 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
                 "dashboard_role_label": dashboard_label_for_role(user_role),
                 "dashboard_user_id": getattr(self.request.user, "id", ""),
                 "dashboard_sidebar_items": self.sidebar_items,
-                "dashboard_notifications_count": 3,
+                "dashboard_notifications_count": notifications_count,
                 "grafana_url": f"http://localhost:{settings.GRAFANA_PORT}",
                 "prometheus_url": f"http://localhost:{settings.PROMETHEUS_PORT}",
                 "stats_cards": self.stats_cards,
@@ -261,22 +294,22 @@ class AdministradorDashboardView(BaseDashboardView):
     sidebar_items = [
         {
             "label": _("Gestion de usuarios"),
-            "url_name": "dashboard_administrador",
+            "href": "#admin-usuarios",
             "icon": "users",
         },
         {
             "label": _("Catalogo de parametros"),
-            "url_name": "dashboard_administrador",
+            "href": "#admin-parametros",
             "icon": "settings",
         },
         {
             "label": _("Logs centralizados"),
-            "url_name": "dashboard_administrador",
+            "href": "#admin-logs",
             "icon": "logs",
         },
         {
             "label": _("Metricas del sistema"),
-            "url_name": "dashboard_administrador",
+            "href": "#admin-metricas",
             "icon": "metrics",
         },
     ]
@@ -346,7 +379,8 @@ class AdministradorDashboardView(BaseDashboardView):
         },
     ]
     quick_actions = [
-        {"label": _("Abrir Django Admin"), "href": "/admin/"},
+        {"label": _("Abrir usuarios"), "href": "#admin-usuarios"},
+        {"label": _("Abrir parametros"), "href": "#admin-parametros"},
         {
             "label": _("Ver Grafana"),
             "href": f"http://localhost:{settings.GRAFANA_PORT}",
@@ -375,12 +409,12 @@ class LiderDocDashboardView(BaseDashboardView):
     sidebar_items = [
         {
             "label": _("Ejecutar asignacion"),
-            "url_name": "dashboard_lider_doc",
+            "href": "#leader-asignacion",
             "icon": "play",
         },
-        {"label": _("Simulacion"), "url_name": "dashboard_lider_doc", "icon": "beaker"},
-        {"label": _("Cobertura"), "url_name": "dashboard_lider_doc", "icon": "chart"},
-        {"label": _("Reportes"), "url_name": "dashboard_lider_doc", "icon": "report"},
+        {"label": _("Simulacion"), "href": "#leader-simulacion", "icon": "beaker"},
+        {"label": _("Cobertura"), "href": "#leader-cobertura", "icon": "chart"},
+        {"label": _("Reportes"), "href": "#leader-reportes", "icon": "report"},
     ]
     stats_cards = [
         {
@@ -444,15 +478,15 @@ class LiderDocDashboardView(BaseDashboardView):
         },
     ]
     quick_actions = [
-        {"label": _("Ejecutar asignacion"), "href": "#asignacion"},
-        {"label": _("Ejecutar simulacion"), "href": "#simulacion"},
-        {"label": _("Ver reportes"), "href": "#reportes"},
+        {"label": _("Ejecutar asignacion"), "href": "#leader-asignacion"},
+        {"label": _("Ejecutar simulacion"), "href": "#leader-simulacion"},
+        {"label": _("Ver reportes"), "href": "#leader-reportes"},
     ]
     support_notes = [
         _(
             "El boton principal debe usar confirmacion antes de ejecutar la asignacion real."
         ),
-        _("La barra de progreso se alimentara por WebSocket en la siguiente tarea."),
+        _("La barra de progreso se actualiza en tiempo real con los eventos del proceso."),
     ]
 
 
@@ -465,22 +499,22 @@ class AuxiliarDocDashboardView(BaseDashboardView):
     sidebar_items = [
         {
             "label": _("Asignaciones parciales"),
-            "url_name": "dashboard_auxiliar_doc",
+            "href": "#aux-asignaciones",
             "icon": "edit",
         },
         {
             "label": _("Calendario semanal"),
-            "url_name": "dashboard_auxiliar_doc",
+            "href": "#aux-calendario",
             "icon": "calendar",
         },
         {
             "label": _("Reservas activas"),
-            "url_name": "dashboard_auxiliar_doc",
+            "href": "#aux-reservas",
             "icon": "clock",
         },
         {
             "label": _("Buscador de aulas"),
-            "url_name": "dashboard_auxiliar_doc",
+            "href": "#aux-buscador",
             "icon": "search",
         },
     ]
@@ -542,13 +576,13 @@ class AuxiliarDocDashboardView(BaseDashboardView):
         },
     ]
     quick_actions = [
-        {"label": _("Nueva asignacion"), "href": "#asignaciones"},
-        {"label": _("Nueva reserva"), "href": "#reservas"},
-        {"label": _("Buscar aula"), "href": "#buscador"},
+        {"label": _("Nueva asignacion"), "href": "#aux-asignaciones"},
+        {"label": _("Nueva reserva"), "href": "#aux-reservas"},
+        {"label": _("Buscar aula"), "href": "#aux-buscador"},
     ]
     support_notes = [
         _("El auxiliar debe ver solo operaciones parciales y reservas temporales."),
-        _("La busqueda de aulas se refrescara en tiempo real en la tarea siguiente."),
+        _("La busqueda de aulas se refresca en tiempo real al cambiar disponibilidad."),
     ]
 
 
@@ -561,22 +595,22 @@ class FacultadDashboardView(BaseDashboardView):
     sidebar_items = [
         {
             "label": _("Ingresar grupo"),
-            "url_name": "dashboard_facultad",
+            "href": "#faculty-grupo",
             "icon": "form",
         },
         {
             "label": _("Grupos ingresados"),
-            "url_name": "dashboard_facultad",
+            "href": "#faculty-grupos",
             "icon": "list",
         },
         {
             "label": _("Disponibilidad"),
-            "url_name": "dashboard_facultad",
+            "href": "#faculty-disponibilidad",
             "icon": "signal",
         },
         {
             "label": _("Consulta de aula"),
-            "url_name": "dashboard_facultad",
+            "href": "#faculty-consulta",
             "icon": "search",
         },
     ]
@@ -622,9 +656,9 @@ class FacultadDashboardView(BaseDashboardView):
         {"first": "Bases de datos", "second": _("Grupo 3C"), "third": _("Validado")},
     ]
     quick_actions = [
-        {"label": _("Nuevo grupo"), "href": "#grupo"},
-        {"label": _("Consultar aula"), "href": "#consulta"},
-        {"label": _("Actualizar disponibilidad"), "href": "#disponibilidad"},
+        {"label": _("Nuevo grupo"), "href": "#faculty-grupo"},
+        {"label": _("Consultar aula"), "href": "#faculty-consulta"},
+        {"label": _("Actualizar disponibilidad"), "href": "#faculty-disponibilidad"},
     ]
     support_notes = [
         _("Los datos ingresados por la facultad alimentan la asignacion automatica."),
@@ -641,16 +675,16 @@ class AdmisionesDashboardView(BaseDashboardView):
     sidebar_items = [
         {
             "label": _("Carga masiva"),
-            "url_name": "dashboard_admisiones",
+            "href": "#admissions-carga",
             "icon": "upload",
         },
         {
             "label": _("Progreso"),
-            "url_name": "dashboard_admisiones",
+            "href": "#admissions-cobertura",
             "icon": "progress",
         },
-        {"label": _("Validacion"), "url_name": "dashboard_admisiones", "icon": "check"},
-        {"label": _("Cobertura"), "url_name": "dashboard_admisiones", "icon": "report"},
+        {"label": _("Validacion"), "href": "#admissions-validacion", "icon": "check"},
+        {"label": _("Cobertura"), "href": "#admissions-cobertura", "icon": "report"},
     ]
     stats_cards = [
         {
@@ -686,11 +720,11 @@ class AdmisionesDashboardView(BaseDashboardView):
         {"first": "Grupo 3C", "second": _("Con error"), "third": _("Campo faltante")},
     ]
     quick_actions = [
-        {"label": _("Cargar archivo"), "href": "#carga"},
-        {"label": _("Ver progreso"), "href": "#progreso"},
-        {"label": _("Reporte de cobertura"), "href": "#cobertura"},
+        {"label": _("Cargar archivo"), "href": "#admissions-carga"},
+        {"label": _("Ver progreso"), "href": "#admissions-cobertura"},
+        {"label": _("Reporte de cobertura"), "href": "#admissions-cobertura"},
     ]
     support_notes = [
         _("Admisiones solo ingresa la cantidad real de estudiantes por grupo."),
-        _("La barra de progreso se conectara al worker Celery en la siguiente tarea."),
+        _("La barra de progreso se sincroniza con el worker Celery en tiempo real."),
     ]

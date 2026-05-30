@@ -37,9 +37,9 @@ class SeedBaseDataTests(TestCase):
         response = self.client.post(
             reverse("login"),
             {
-                "username": "admin.sds",
+                "username": "adminsd",
                 "password": DEMO_PASSWORD,
-                "recaptcha_token": "",
+                "recaptcha_token": "PASSED",
             },
         )
 

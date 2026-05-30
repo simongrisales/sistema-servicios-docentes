@@ -12,6 +12,7 @@ from apps.notificaciones.domain.exceptions import TipoNotificacionInvalidoError
 from apps.notificaciones.infrastructure.consumers import (
     DisponibilidadAulaConsumer,
     NotificacionConsumer,
+    PanelSyncConsumer,
     ProgresoAsignacionConsumer,
 )
 
@@ -246,5 +247,53 @@ class ProgresoAsignacionConsumerTests(IsolatedAsyncioTestCase):
                 "tipo": "progreso",
                 "porcentaje": 45,
                 "grupos_procesados": 12,
+            }
+        )
+
+
+class PanelSyncConsumerTests(IsolatedAsyncioTestCase):
+    async def test_connect_rechaza_anonimo_y_acepta_autenticado(self):
+        anon = PanelSyncConsumer()
+        anon.scope = {"user": SimpleNamespace(is_authenticated=False)}
+        anon.close = AsyncMock()
+
+        await anon.connect()
+
+        anon.close.assert_awaited_once_with(code=4401)
+
+        consumer = PanelSyncConsumer()
+        consumer.scope = {"user": SimpleNamespace(is_authenticated=True)}
+        consumer.channel_layer = AsyncMock()
+        consumer.channel_name = "channel-4"
+        consumer.accept = AsyncMock()
+
+        await consumer.connect()
+
+        consumer.channel_layer.group_add.assert_awaited_once_with(
+            "panel_sync",
+            "channel-4",
+        )
+        consumer.accept.assert_awaited_once()
+
+    async def test_catalogo_actualizado_serializa_evento(self):
+        consumer = PanelSyncConsumer()
+        consumer.send_json = AsyncMock()
+
+        await consumer.catalogo_actualizado(
+            {
+                "entidad": "aulas",
+                "accion": "actualizada",
+                "detalle": "Aula sincronizada",
+                "payload": {"aula_id": "a1"},
+            }
+        )
+
+        consumer.send_json.assert_awaited_once_with(
+            {
+                "tipo": "catalogo_actualizado",
+                "entidad": "aulas",
+                "accion": "actualizada",
+                "detalle": "Aula sincronizada",
+                "payload": {"aula_id": "a1"},
             }
         )

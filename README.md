@@ -76,13 +76,13 @@ La documentación técnica del proyecto describe:
      - [Modelo Arquitectura por Capas Lógicas Backend](#modelo-arquitectura-por-capas-lógicas-backend)
      - [Modelo Arquitectura por Capas Lógicas Frontend](#modelo-arquitectura-por-capas-lógicas-frontend)
    - [Modelo de Secuencia](#modelo-de-secuencia)
-     -[Modelo de Secuencia Backend](#modelo-de-secuencia-backend)
-     -[Modelo de Secuencia Frontend](#modelo-de-secuencia-frontend)
+     - [Modelo de Secuencia Backend](#modelo-de-secuencia-backend)
+     - [Modelo de Secuencia Frontend](#modelo-de-secuencia-frontend)
 7. [Instalación y Ejecución](#instalación-y-ejecución)
-   -[Prerrequisitos](#prerrequisitos)
-   -[Levantar el proyecto](#levantar-el-proyecto)
-   -[URLs del sistema](#urls-del-sistema)
-   -[Ejecutar pruebas](#ejecutar-pruebas)
+   - [Prerrequisitos](#prerrequisitos)
+   - [Levantar el proyecto](#levantar-el-proyecto)
+   - [URLs del sistema](#urls-del-sistema)
+   - [Ejecutar pruebas](#ejecutar-pruebas)
 8. [Roles del Sistema](#roles-del-sistema)
 9. [Estrategia de Ramificación Git](#estrategia-de-ramificación-git)
 10. [Línea Base del Sistema](#linea-base-del-sistema)
@@ -488,11 +488,11 @@ docker compose -f docker-compose.dev.yml up
 
 # El stack de desarrollo ejecuta migraciones y carga automaticamente
 # los usuarios demo base para presentar el sistema:
-# admin.sds / UcoDemo2026*
-# lider.sd / UcoDemo2026*
-# auxiliar.sd / UcoDemo2026*
-# facultad.ing / UcoDemo2026*
-# admisiones / UcoDemo2026*
+# adminsd / uco2026*
+# lidersd / uco2026*
+# auxisd / uco2026*
+# facultaduco / uco2026*
+# admisionuco / uco2026*
 
 # Producción
 docker compose up -d

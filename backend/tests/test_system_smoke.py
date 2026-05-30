@@ -34,7 +34,7 @@ class SistemaSmokeTests(TestCase):
         cls._ensure_smoke_data()
         cache.delete("academico:aulas_disponibles")
         cache.delete("academico:aulas_disponibles_dto")
-        cls.admin = cls.user_model.objects.get(username="admin.sds")
+        cls.admin = cls.user_model.objects.get(username="adminsd")
         cls.access_token = str(RefreshToken.for_user(cls.admin).access_token)
 
     @classmethod
@@ -134,9 +134,9 @@ class SistemaSmokeTests(TestCase):
         response = web_client.post(
             reverse("login"),
             {
-                "username": "admin.sds",
+                "username": "adminsd",
                 "password": DEMO_PASSWORD,
-                "recaptcha_token": "",
+                "recaptcha_token": "PASSED",
             },
         )
 
@@ -145,13 +145,13 @@ class SistemaSmokeTests(TestCase):
 
         token_response = web_client.post(
             reverse("token_obtain_pair"),
-            {"username": "admin.sds", "password": DEMO_PASSWORD},
+            {"username": "adminsd", "password": DEMO_PASSWORD},
         )
 
         assert token_response.status_code == status.HTTP_200_OK
         assert "access" in token_response.json()
         assert "refresh" in token_response.json()
-        assert authenticate(username="admin.sds", password=DEMO_PASSWORD) is not None
+        assert authenticate(username="adminsd", password=DEMO_PASSWORD) is not None
 
     def test_catalogos_academicos_y_parametros_se_consultan(self) -> None:
         client = self._api_client()

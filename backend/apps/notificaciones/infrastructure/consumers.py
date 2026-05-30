@@ -81,3 +81,32 @@ class ProgresoAsignacionConsumer(AsyncJsonWebsocketConsumer):
                 "grupos_procesados": event.get("grupos_procesados", 0),
             }
         )
+
+
+class PanelSyncConsumer(AsyncJsonWebsocketConsumer):
+    """Canal WebSocket autenticado para sincronizar dashboards en tiempo real."""
+
+    group_name = "panel_sync"
+
+    async def connect(self) -> None:
+        user = self.scope.get("user")
+        if user is None or not user.is_authenticated:
+            await self.close(code=4401)
+            return
+
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, code: int) -> None:
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def catalogo_actualizado(self, event: dict) -> None:
+        await self.send_json(
+            {
+                "tipo": "catalogo_actualizado",
+                "entidad": event.get("entidad"),
+                "accion": event.get("accion"),
+                "detalle": event.get("detalle"),
+                "payload": event.get("payload", {}),
+            }
+        )

@@ -10,13 +10,13 @@
     </div>
 
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="admin-logs">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Panorama operativo</p>
                     <h3 class="card-title">Puntos clave del rol</h3>
                 </div>
-                <span class="badge badge-info">HTMX + Alpine + WS</span>
+                <span class="badge badge-info">Actualizacion en vivo</span>
             </div>
             <div class="stack">
                 {% for item in highlights %}
@@ -28,7 +28,7 @@
             </div>
         </article>
 
-        <article class="card">
+        <article class="card" id="admin-metricas">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Acciones rapidas</p>
@@ -42,7 +42,7 @@
             </div>
             <div class="alert alert-warning" style="margin-top: 1rem;">
                 <strong>Nota operativa</strong>
-                <p>{{ support_notes.0|default:"Las acciones del dashboard se conectaran en tareas posteriores." }}</p>
+                <p>{{ support_notes.0|default:"Las acciones del dashboard operan sobre datos reales y se sincronizan entre paneles." }}</p>
             </div>
         </article>
     </div>
@@ -92,13 +92,13 @@
 
     {% if dashboard_role_code == "administrador" %}
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="admin-usuarios">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Roles institucionales</p>
                     <h3 class="card-title">Crear y revisar roles</h3>
                 </div>
-                <span class="badge badge-info">CRUD</span>
+                <span class="badge badge-info">Acceso seguro</span>
             </div>
             <form id="admin-role-form" class="stack">
                 {% csrf_token %}
@@ -146,7 +146,7 @@
                     <p class="card-subtitle">Usuarios</p>
                     <h3 class="card-title">Crear usuarios con rol</h3>
                 </div>
-                <span class="badge badge-success">JWT + Session</span>
+                <span class="badge badge-success">Sesion activa</span>
             </div>
             <form id="admin-user-form" class="stack">
                 {% csrf_token %}
@@ -193,7 +193,7 @@
     </div>
 
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="admin-aulas">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Infraestructura</p>
@@ -214,6 +214,7 @@
                 </div>
                 <div class="hero-actions">
                     <button class="btn btn-primary" type="submit">Guardar aula</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="admin-aula-status"></p>
             </form>
@@ -245,13 +246,13 @@
     </div>
 
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="admin-parametros">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Catalogo</p>
                     <h3 class="card-title">Crear parametros del sistema</h3>
                 </div>
-                <span class="badge badge-info">JSON</span>
+                <span class="badge badge-info">Reglas del sistema</span>
             </div>
             <form id="admin-param-form" class="stack">
                 {% csrf_token %}
@@ -274,6 +275,7 @@
                 </label>
                 <div class="hero-actions">
                     <button class="btn btn-primary" type="submit">Guardar parametro</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="admin-param-status"></p>
             </form>
@@ -305,7 +307,7 @@
     </div>
     {% elif dashboard_role_code == "lider_sd" or dashboard_role_code == "lider_doc" %}
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="leader-asignacion">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Ejecucion real</p>
@@ -329,18 +331,19 @@
                 </div>
                 <div class="hero-actions">
                     <button class="btn btn-primary" type="submit">Ejecutar asignacion</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="leader-exec-status"></p>
             </form>
         </article>
 
-        <article class="card">
+        <article class="card" id="leader-simulacion">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Simulacion</p>
                     <h3 class="card-title">Probar escenario con los datos actuales</h3>
                 </div>
-                <span class="badge badge-info">Strategy</span>
+                <span class="badge badge-info">Escenarios</span>
             </div>
             <form id="leader-sim-form" class="stack">
                 {% csrf_token %}
@@ -350,6 +353,7 @@
                     <button class="btn btn-primary" type="button" id="leader-semester-assign">
                         Asignar semestre
                     </button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="leader-sim-status"></p>
             </form>
@@ -361,7 +365,7 @@
     </div>
 
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="leader-reportes">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Grupos y aulas</p>
@@ -384,7 +388,7 @@
                 </table>
             </div>
         </article>
-        <article class="card">
+        <article class="card" id="leader-cobertura">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Aulas disponibles</p>
@@ -409,7 +413,7 @@
     </div>
     {% elif dashboard_role_code == "auxiliar_sd" or dashboard_role_code == "auxiliar_doc" %}
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="aux-reservas">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Reservas</p>
@@ -429,12 +433,13 @@
                 </div>
                 <div class="hero-actions">
                     <button class="btn btn-primary" type="submit">Crear reserva</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="aux-reserva-status"></p>
             </form>
         </article>
 
-        <article class="card">
+        <article class="card" id="aux-buscador">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Aulas</p>
@@ -459,7 +464,7 @@
     </div>
 
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="aux-asignaciones">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Reservas activas</p>
@@ -483,7 +488,7 @@
             </div>
         </article>
 
-        <article class="card">
+        <article class="card" id="aux-calendario">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Registro</p>
@@ -504,13 +509,13 @@
     </div>
     {% elif dashboard_role_code == "facultad" %}
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="faculty-grupo">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Grupos</p>
                     <h3 class="card-title">Registrar grupo de facultad</h3>
                 </div>
-                <span class="badge badge-info">Ingreso</span>
+                <span class="badge badge-info">Ingreso de datos</span>
             </div>
             <form id="faculty-grupo-form" class="stack">
                 {% csrf_token %}
@@ -527,11 +532,12 @@
                 </div>
                 <div class="hero-actions">
                     <button class="btn btn-primary" type="submit">Guardar grupo</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="faculty-grupo-status"></p>
             </form>
         </article>
-        <article class="card">
+        <article class="card" id="faculty-disponibilidad">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Aulas</p>
@@ -556,7 +562,7 @@
     </div>
 
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="faculty-grupos">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Grupos ingresados</p>
@@ -580,7 +586,7 @@
             </div>
         </article>
 
-        <article class="card">
+        <article class="card" id="faculty-consulta">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Consulta</p>
@@ -601,13 +607,13 @@
     </div>
     {% elif dashboard_role_code == "admisiones" %}
     <div class="dashboard-grid two-cols">
-        <article class="card">
+        <article class="card" id="admissions-carga">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Carga masiva</p>
                     <h3 class="card-title">Registrar varios grupos</h3>
                 </div>
-                <span class="badge badge-success">Batch</span>
+                <span class="badge badge-success">Carga masiva</span>
             </div>
             <form id="admissions-bulk-form" class="stack">
                 {% csrf_token %}
@@ -615,11 +621,12 @@
                 <div class="field-grid">
                     <input class="input" name="semestre" value="2026-1" required>
                     <button class="btn btn-primary" type="submit">Procesar lote</button>
+                    <button class="btn btn-ghost" type="reset">Limpiar</button>
                 </div>
                 <p class="form-status" id="admissions-bulk-status"></p>
             </form>
         </article>
-        <article class="card">
+        <article class="card" id="admissions-cobertura">
             <div class="card-header">
                 <div>
                     <p class="card-subtitle">Progreso</p>
@@ -639,7 +646,7 @@
         </article>
     </div>
 
-    <article class="card">
+    <article class="card" id="admissions-validacion">
         <div class="card-header">
             <div>
                 <p class="card-subtitle">Grupos cargados</p>
