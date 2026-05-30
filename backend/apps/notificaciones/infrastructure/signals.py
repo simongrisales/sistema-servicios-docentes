@@ -1,8 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .models import NotificacionModel
 from .broadcasts import broadcast_notification_created
+from .models import NotificacionModel
 
 
 @receiver(post_save, sender=NotificacionModel)
