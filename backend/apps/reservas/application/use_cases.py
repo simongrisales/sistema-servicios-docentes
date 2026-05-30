@@ -23,7 +23,9 @@ class ReservaService:
     def crear_reserva(self, input_dto: CrearReservaInputDTO) -> ReservaOutputDTO:
         ahora = timezone.now()
         if input_dto.inicio < ahora:
-            raise ReservaConflictoError("La fecha de inicio no puede estar en el pasado.")
+            raise ReservaConflictoError(
+                "La fecha de inicio no puede estar en el pasado."
+            )
         if input_dto.fin <= input_dto.inicio:
             raise ReservaConflictoError("La fecha final debe ser posterior al inicio.")
         if self.reserva_repo and self.reserva_repo.find_conflicts(

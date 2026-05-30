@@ -128,9 +128,7 @@ def test_eliminar_notificacion_con_repo():
     repo = FakeNotificacionRepository()
     service = NotificacionService(repo)
 
-    deleted = service.eliminar_notificacion(
-        EliminarNotificacionInputDTO("n1", "7")
-    )
+    deleted = service.eliminar_notificacion(EliminarNotificacionInputDTO("n1", "7"))
 
     assert deleted is True
     assert repo.deleted == "n1"

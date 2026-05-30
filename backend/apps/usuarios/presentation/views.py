@@ -300,9 +300,7 @@ class BaseDashboardView(LoginRequiredMixin, TemplateView):
                 ),
                 "dashboard_show_metrics": show_metrics,
                 "grafana_url": (
-                    f"http://localhost:{settings.GRAFANA_PORT}"
-                    if show_metrics
-                    else ""
+                    f"http://localhost:{settings.GRAFANA_PORT}" if show_metrics else ""
                 ),
                 "prometheus_url": (
                     f"http://localhost:{settings.PROMETHEUS_PORT}"
