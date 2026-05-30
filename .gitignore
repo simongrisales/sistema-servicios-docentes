@@ -7,18 +7,29 @@ __pycache__/
 .coverage
 .pytest_cache/
 .ruff_cache/
+*.log
+staticfiles/
+media/
 
 # Secret keys y variables sensibles
 .env
 *.local.ini
 credentials.json
+nginx/ssl/*.crt
+nginx/ssl/*.key
+nginx/ssl/*.pem
 
 # Artefactos compilados o generados por Docker
-*/node_modules
-*/dist
+node_modules/
+*/node_modules/
+dist/
+*/dist/
 Dockerfile.*
 docker-compose.lock
 .vscode/
+postgres_data/
+valkey_data/
+.dockerignore
 
 # Archivos de logs y datos voluminosos (si no son parte del repo)
 logs/

@@ -37,5 +37,8 @@ RECAPTCHA_PUBLIC_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
 RECAPTCHA_PRIVATE_KEY = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"
 
 # Permite usar claves de test de Google sin fallar `manage.py check` en dev.
-SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]
+SILENCED_SYSTEM_CHECKS = [
+    "django_recaptcha.recaptcha_test_key_error",
+    "captcha.recaptcha_test_key_error",
+]
 

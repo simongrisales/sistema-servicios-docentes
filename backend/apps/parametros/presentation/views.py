@@ -16,6 +16,7 @@ from ..domain.exceptions import (
 )
 from ..infrastructure.repositories import CatalogoParametroRepository
 from .serializers import ObtenerValorSerializer, ParametroSerializer
+from apps.usuarios.infrastructure.permissions import EsAdministrador
 
 
 class CatalogoParametroViewSet(viewsets.ViewSet):
@@ -30,7 +31,7 @@ class CatalogoParametroViewSet(viewsets.ViewSet):
         POST /api/parametros/valor/          → obtener sólo el valor (con default)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [EsAdministrador]
 
     def _service(self) -> CatalogoParametroService:
         return CatalogoParametroService(CatalogoParametroRepository())

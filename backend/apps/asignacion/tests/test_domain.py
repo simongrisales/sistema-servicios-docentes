@@ -9,6 +9,7 @@ from ..domain.exceptions import (
     DatosIncompletosError,
     SinAulasDisponiblesError,
 )
+from ..infrastructure.strategies import PrioridadEstudiantesStrategy
 
 # ---------------------------------------------------------------------------
 # Entidad Asignacion
@@ -133,3 +134,100 @@ class TestDomainExceptions:
     def test_datos_incompletos_error(self):
         err = DatosIncompletosError("Faltan datos")
         assert isinstance(err, Exception)
+
+
+class TestPrioridadEstudiantesStrategy:
+    def test_ordena_grupos_de_mayor_a_menor(self):
+        strategy = PrioridadEstudiantesStrategy()
+        resultado = strategy.asignar(
+            grupos=[
+                {
+                    "id": "g1",
+                    "num_estudiantes": 10,
+                    "bloque_horario_id": "b1",
+                    "semestre": "2026-1",
+                },
+                {
+                    "id": "g2",
+                    "num_estudiantes": 30,
+                    "bloque_horario_id": "b1",
+                    "semestre": "2026-1",
+                },
+            ],
+            aulas=[
+                {"id": "a1", "capacidad": 20, "disponible": True, "activa": True},
+                {"id": "a2", "capacidad": 40, "disponible": True, "activa": True},
+            ],
+            reglas=[],
+        )
+
+        assert resultado.exitoso is True
+        assert resultado.asignaciones[0]["grupo_id"] == "g2"
+
+    def test_detecta_conflicto_de_horario(self):
+        strategy = PrioridadEstudiantesStrategy()
+        resultado = strategy.asignar(
+            grupos=[
+                {
+                    "id": "g1",
+                    "num_estudiantes": 20,
+                    "bloque_horario_id": "b1",
+                    "semestre": "2026-1",
+                },
+                {
+                    "id": "g2",
+                    "num_estudiantes": 15,
+                    "bloque_horario_id": "b1",
+                    "semestre": "2026-1",
+                },
+            ],
+            aulas=[
+                {"id": "a1", "capacidad": 25, "disponible": True, "activa": True},
+            ],
+            reglas=[],
+        )
+
+        assert resultado.exitoso is False
+        assert resultado.conflicto_detalles
+
+    def test_usa_el_aula_mas_pequena_que_alcanza(self):
+        strategy = PrioridadEstudiantesStrategy()
+        resultado = strategy.asignar(
+            grupos=[
+                {
+                    "id": "g1",
+                    "num_estudiantes": 18,
+                    "bloque_horario_id": "b1",
+                    "semestre": "2026-1",
+                }
+            ],
+            aulas=[
+                {"id": "a1", "capacidad": 30, "disponible": True, "activa": True},
+                {"id": "a2", "capacidad": 20, "disponible": True, "activa": True},
+                {"id": "a3", "capacidad": 50, "disponible": True, "activa": True},
+            ],
+            reglas=[],
+        )
+
+        assert resultado.exitoso is True
+        assert resultado.asignaciones[0]["aula_id"] == "a2"
+
+    def test_marca_pendiente_si_no_hay_aula(self):
+        strategy = PrioridadEstudiantesStrategy()
+        resultado = strategy.asignar(
+            grupos=[
+                {
+                    "id": "g1",
+                    "num_estudiantes": 20,
+                    "bloque_horario_id": "b1",
+                    "semestre": "2026-1",
+                }
+            ],
+            aulas=[
+                {"id": "a1", "capacidad": 10, "disponible": True, "activa": True},
+            ],
+            reglas=[],
+        )
+
+        assert resultado.exitoso is False
+        assert resultado.asignaciones[0]["estado"] == "PENDIENTE"

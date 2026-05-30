@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from django.core.cache import cache
+
 from ..domain.exceptions import CapacidadAulaInvalidaError, GrupoSinDocenteError
 from ..domain.interfaces import IAulaRepository, IDocenteRepository, IGrupoRepository
 from .dtos import (
@@ -55,9 +57,12 @@ class AcademicoService:
         )
 
     def listar_aulas_disponibles(self) -> list[AulaOutputDTO]:
+        cached = cache.get("academico:aulas_disponibles_dto")
+        if cached is not None:
+            return cached
         if self.aula_repo is None:
             return []
-        return [
+        aulas = [
             AulaOutputDTO(
                 id=aula.id,
                 nombre=aula.nombre,
@@ -67,6 +72,8 @@ class AcademicoService:
             )
             for aula in self.aula_repo.list_disponibles()
         ]
+        cache.set("academico:aulas_disponibles_dto", aulas, 300)
+        return aulas
 
     def crear_grupo(self, dto: GrupoInputDTO) -> GrupoOutputDTO:
         if (

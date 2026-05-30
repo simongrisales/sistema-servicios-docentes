@@ -1,9 +1,9 @@
 from collections.abc import Iterable
 from typing import Any
 
+from django.apps import apps
 from django.db import IntegrityError, transaction
 
-from apps.academico.infrastructure.models import AulaModel, GrupoModel
 from core.repositories import BaseRepository
 
 from ..domain.entities import Asignacion
@@ -72,7 +72,8 @@ class AsignacionRepository(
         return self.list(semestre=semestre)
 
     def contar_grupos_por_semestre(self, semestre: str) -> int:
-        return GrupoModel.objects.filter(semestre=semestre, activo=True).count()
+        grupo_model = apps.get_model("academico", "GrupoModel")
+        return grupo_model.objects.filter(semestre=semestre, activo=True).count()
 
     def contar_grupos_asignados_por_semestre(self, semestre: str) -> int:
         return (
@@ -83,10 +84,12 @@ class AsignacionRepository(
         )
 
     def obtener_grupo(self, grupo_id: str):
-        return GrupoModel.objects.filter(id=grupo_id, activo=True).first()
+        grupo_model = apps.get_model("academico", "GrupoModel")
+        return grupo_model.objects.filter(id=grupo_id, activo=True).first()
 
     def obtener_aula(self, aula_id: str):
-        return AulaModel.objects.filter(id=aula_id, activa=True).first()
+        aula_model = apps.get_model("academico", "AulaModel")
+        return aula_model.objects.filter(id=aula_id, activa=True).first()
 
     @staticmethod
     def _to_domain(model: AsignacionModel) -> Asignacion:

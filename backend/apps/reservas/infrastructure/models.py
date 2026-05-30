@@ -1,13 +1,11 @@
 from django.conf import settings
 from django.db import models
 
-from apps.academico.infrastructure.models import AulaModel
-
 
 class ReservaModel(models.Model):
     reserva_id = models.CharField(max_length=36, unique=True, db_index=True)
     aula = models.ForeignKey(
-        AulaModel,
+        "academico.AulaModel",
         on_delete=models.CASCADE,
         related_name="reservas",
     )

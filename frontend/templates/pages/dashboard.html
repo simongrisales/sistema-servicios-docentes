@@ -1,82 +1,47 @@
 {% extends "base.html" %}
-{% load static %}
 
-{% block title %}Dashboard - SDS UCO{% endblock %}
+{% block title %}Dashboard SDS UCO{% endblock %}
 
 {% block content %}
-<section class="dashboard-panel">
-    <div class="dashboard-tools">
-        <button class="tool-button is-active" type="button" data-dashboard-view="calendar" aria-label="Calendario">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v4M16 3v4M4 9h16M5 5h14v15H5z"/></svg>
-        </button>
-        <button class="tool-button" type="button" data-dashboard-view="form" aria-label="Formulario">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>
-        </button>
-    </div>
-
-    <div class="dashboard-search">
-        <input type="search" placeholder="Noviembre de 2026" aria-label="Buscar fecha">
-        <span>Solicitante: {{ solicitante|default:"Adriana Florez Cabal" }}</span>
-    </div>
-
-    <div class="content-stage" data-dashboard-panel="calendar">
-        <div class="calendar-card">
-            <div class="calendar-head">
-                <span>Lunes</span><span>Martes</span><span>Miercoles</span><span>Jueves</span><span>Viernes</span><span>Sabado</span><span>Domingo</span>
-            </div>
-            <div class="calendar-grid">
-                {% for day in calendar_days %}
-                <div class="calendar-day{% if day.today %} is-today{% endif %}">
-                    <strong>{{ day.number }}</strong>
-                    {% if day.event %}
-                    <span>{{ day.event }}</span>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
+<section class="dashboard-shell">
+    <header class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Sistema de Servicios Docentes</span>
+            <h2>Selecciona el panel de trabajo</h2>
+            <p class="section-lead">Cada rol tiene su propio dashboard, con las acciones y visibilidad que necesita para operar sin fricciones.</p>
         </div>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="{% url 'dashboard_administrador' %}">Administrador</a>
+            <a class="btn btn-ghost" href="{% url 'dashboard_lider_doc' %}">Lider DOC</a>
+        </div>
+    </header>
+
+    <div class="dashboard-grid three-cols">
+        <a class="card" href="{% url 'dashboard_administrador' %}">
+            <p class="card-subtitle">Rol 1</p>
+            <h3 class="card-title">Administrador</h3>
+            <p class="support-note">Usuarios, reglas, logs y metricas del sistema.</p>
+        </a>
+        <a class="card" href="{% url 'dashboard_lider_doc' %}">
+            <p class="card-subtitle">Rol 2</p>
+            <h3 class="card-title">Lider DOC</h3>
+            <p class="support-note">Asignacion automatica, simulacion y cobertura.</p>
+        </a>
+        <a class="card" href="{% url 'dashboard_auxiliar_doc' %}">
+            <p class="card-subtitle">Rol 3</p>
+            <h3 class="card-title">Auxiliar DOC</h3>
+            <p class="support-note">Asignaciones parciales, reservas y calendario.</p>
+        </a>
+        <a class="card" href="{% url 'dashboard_facultad' %}">
+            <p class="card-subtitle">Rol 4</p>
+            <h3 class="card-title">Facultad</h3>
+            <p class="support-note">Ingreso de grupos, disponibilidad y consulta de aulas.</p>
+        </a>
+        <a class="card" href="{% url 'dashboard_admisiones' %}">
+            <p class="card-subtitle">Rol 5</p>
+            <h3 class="card-title">Admisiones</h3>
+            <p class="support-note">Carga masiva, progreso y cobertura de grupos.</p>
+        </a>
     </div>
-
-    <div class="content-stage is-hidden" data-dashboard-panel="form">
-        <form class="reservation-form"
-              action="/api/academico/aulas/"
-              method="post"
-              hx-post="/api/academico/aulas/"
-              hx-target="#main-app"
-              hx-swap="none"
-        >
-            {% csrf_token %}
-            <h1>Informacion de la reserva</h1>
-
-            <label>
-                Aula solicitada
-                <input name="nombre" type="text" placeholder="Bloque 3 - Aula 204">
-            </label>
-            <label>
-                Numero estudiantes
-                <input name="capacidad" type="number" min="1" placeholder="35">
-            </label>
-            <label>
-                Tipo de espacio
-                <select name="tipo">
-                    <option value="aula_regular">Aula regular</option>
-                    <option value="laboratorio">Laboratorio</option>
-                    <option value="sala_sistemas">Sala de sistemas</option>
-                    <option value="auditorio">Auditorio</option>
-                </select>
-            </label>
-            <label>
-                Observaciones
-                <textarea name="restricciones" rows="4" placeholder="Requerimientos del aula"></textarea>
-            </label>
-
-            <button class="btn btn-accent" type="submit">Enviar</button>
-        </form>
-    </div>
-
 </section>
 {% endblock %}
-{% block extra_scripts %}
-<script src="{% static 'js/sds/dashboard.js' %}"></script>
-{% endblock %}
-

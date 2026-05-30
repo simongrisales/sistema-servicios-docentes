@@ -7,6 +7,7 @@ from ..application.dtos import AsignacionInputDTO, SimulacionInputDTO
 from ..application.use_cases import AsignacionUseCaseService
 from ..infrastructure.repositories import AsignacionRepository
 from ..infrastructure.strategies import PrioridadEstudiantesStrategy
+from apps.usuarios.infrastructure.permissions import EsAdministradorOLiderDOC
 from .serializers import (
     SerializacionAsignacion,
     SerializacionCoberturaOutput,
@@ -28,6 +29,11 @@ class AsignacionViewSet(viewsets.ViewSet):
     def ejecutar(self, request):
         serializer = SerializacionAsignacion(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if not EsAdministradorOLiderDOC().has_permission(request, self):
+            return Response(
+                {"detail": "No tiene permisos para ejecutar la asignacion."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         resultado = self._service().ejecutar_asignacion_automatica(
             AsignacionInputDTO(**serializer.validated_data)
         )

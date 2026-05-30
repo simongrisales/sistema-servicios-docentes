@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Facultad | SDS UCO{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+    <header class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Rol: Facultad</span>
+            <h2>Ingreso de grupos y seguimiento de aulas</h2>
+            <p class="section-lead">Registra grupos, consulta disponibilidad en vivo y valida que cada materia tenga el aula asignada.</p>
+        </div>
+        <div class="hero-actions">
+            <button class="btn btn-primary" type="button">Ingresar grupo</button>
+            <button class="btn btn-ghost" type="button">Consultar aula</button>
+        </div>
+    </header>
+
+    {% include "pages/partials/dashboard_sections.html" %}
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Formulario de grupo</p>
+                    <h3 class="card-title">Materia, docente y horario</h3>
+                </div>
+                <span class="badge badge-info">Ingreso</span>
+            </div>
+            <form class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" type="text" placeholder="Materia">
+                    <input class="input" type="text" placeholder="Docente">
+                    <input class="input" type="text" placeholder="Horario">
+                    <input class="input" type="number" placeholder="Numero de estudiantes">
+                </div>
+                <textarea class="textarea" placeholder="Observaciones"></textarea>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="button">Guardar grupo</button>
+                    <button class="btn btn-ghost" type="button">Limpiar</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Disponibilidad</p>
+                    <h3 class="card-title">Indicador en tiempo real</h3>
+                </div>
+                <span class="badge badge-success">WebSocket</span>
+            </div>
+            <div class="stack">
+                <div class="alert alert-success">
+                    <strong>Aula 108</strong>
+                    <p data-aula-id="108">Disponible</p>
+                </div>
+                <div class="alert alert-warning">
+                    <strong>Aula 204</strong>
+                    <p data-aula-id="204">Ocupada</p>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Grupos ingresados</p>
+                    <h3 class="card-title">Estado de asignacion</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Materia</th>
+                            <th>Grupo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Calculo I</td><td>1A</td><td><span class="badge badge-warning">Pendiente</span></td></tr>
+                        <tr><td>Algoritmos</td><td>2B</td><td><span class="badge badge-success">Asignado</span></td></tr>
+                        <tr><td>Bases de datos</td><td>3C</td><td><span class="badge badge-info">Validado</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Consulta</p>
+                    <h3 class="card-title">Que aula tiene cada grupo</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Aula</th>
+                            <th>Horario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1A</td><td>Aula 204</td><td>08:00 - 10:00</td></tr>
+                        <tr><td>2B</td><td>Sala 2</td><td>10:00 - 12:00</td></tr>
+                        <tr><td>3C</td><td>Laboratorio 1</td><td>14:00 - 16:00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

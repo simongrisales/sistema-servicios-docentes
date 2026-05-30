@@ -16,6 +16,19 @@ class AsignacionOutputDTO:
     bloque_horario_id: str
     semestre: str
     estado: str
+    mensaje: str = ""
+    total_asignaciones: int = 0
+    grupos_pendientes: int = 0
+    conflictos: list[str] = field(default_factory=list)
+    asignaciones: list[dict] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class AsignacionMasivaInputDTO:
+    semestre: str
+    grupos: list[dict] = field(default_factory=list)
+    aulas: list[dict] = field(default_factory=list)
+    reglas: list[dict] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

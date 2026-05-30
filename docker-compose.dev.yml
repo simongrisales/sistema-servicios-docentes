@@ -1,87 +1,169 @@
+x-app-common: &app-common
+  env_file:
+    - .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.dev
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: 5432
+    VALKEY_HOST: valkey
+    VALKEY_PORT: 6379
+    VALKEY_URL: redis://valkey:6379/0
+    CELERY_BROKER_URL: redis://valkey:6379/0
+    CELERY_RESULT_BACKEND: redis://valkey:6379/0
+    CHANNEL_LAYERS_URL: redis://valkey:6379/0
+  restart: unless-stopped
+
 services:
   postgres:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-sistema_servicios_docentes}
       POSTGRES_USER: ${POSTGRES_USER:-servicios_docentes}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicios_docentes}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
-      - postgres_data_dev:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-servicios_docentes} -d ${POSTGRES_DB:-sistema_servicios_docentes}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   valkey:
     image: valkey/valkey:8-alpine
+    restart: unless-stopped
     command: valkey-server --appendonly yes
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
-      - valkey_data_dev:/data
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   django:
+    <<: *app-common
     build:
       context: .
       dockerfile: backend/Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.dev
-      POSTGRES_HOST: postgres
-      VALKEY_HOST: valkey
-      CELERY_BROKER_URL: redis://valkey:6379/0
-      CELERY_RESULT_BACKEND: redis://valkey:6379/0
-    env_file:
-      - path: .env
-        required: false
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
-      - .:/app
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./locale:/app/locale
     depends_on:
-      - postgres
-      - valkey
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/').read()\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   daphne:
+    <<: *app-common
     build:
       context: .
       dockerfile: backend/Dockerfile
     command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.dev
-      POSTGRES_HOST: postgres
-      VALKEY_HOST: valkey
-      CELERY_BROKER_URL: redis://valkey:6379/0
-      CELERY_RESULT_BACKEND: redis://valkey:6379/0
-    env_file:
-      - path: .env
-        required: false
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     volumes:
-      - .:/app
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./locale:/app/locale
     depends_on:
-      - postgres
-      - valkey
+      django:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/').read()\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   celery:
+    <<: *app-common
     build:
       context: .
       dockerfile: backend/Dockerfile
     command: celery -A config worker --loglevel=info
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.dev
-      POSTGRES_HOST: postgres
-      VALKEY_HOST: valkey
-      CELERY_BROKER_URL: redis://valkey:6379/0
-      CELERY_RESULT_BACKEND: redis://valkey:6379/0
-    env_file:
-      - path: .env
-        required: false
     volumes:
-      - .:/app
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./locale:/app/locale
     depends_on:
-      - postgres
-      - valkey
+      django:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./frontend/static:/usr/share/nginx/html/static:ro
+      - ./frontend/static:/usr/share/nginx/html/media:ro
+    depends_on:
+      django:
+        condition: service_healthy
+      daphne:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.0.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./nginx/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
 
 volumes:
-  postgres_data_dev:
-  valkey_data_dev:
+  postgres_data:
+  valkey_data:
+  grafana_data:

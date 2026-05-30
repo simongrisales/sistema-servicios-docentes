@@ -42,28 +42,47 @@ jobs:
       POSTGRES_PORT: 5432
       VALKEY_HOST: localhost
       VALKEY_PORT: 6379
+      VALKEY_URL: redis://localhost:6379/0
       CELERY_BROKER_URL: redis://localhost:6379/0
       CELERY_RESULT_BACKEND: redis://localhost:6379/0
       CHANNEL_LAYERS_URL: redis://localhost:6379/0
-      JWT_SECRET: jwt-ci
+      JWT_SECRET_KEY: jwt-ci
+      JWT_ACCESS_TOKEN_LIFETIME: 60
+      JWT_REFRESH_TOKEN_LIFETIME: 7
+      RECAPTCHA_PUBLIC_KEY: 6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI
+      RECAPTCHA_PRIVATE_KEY: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
 
     steps:
-      - name: Descargar repositorio
+      - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Python 3.13
+      - name: Setup Python 3.13
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      - name: Instalar dependencias
+      - name: Instalacion de dependencias
         run: pip install -r requirements/dev.txt
 
-      - name: Ejecutar Ruff
-        run: ruff check backend
+      - name: Ruff
+        run: ruff check backend/
 
-      - name: Verificar formato con Black
-        run: black --check backend
+      - name: Black
+        run: black --check backend/
 
-      - name: Ejecutar pruebas con cobertura
-        run: pytest backend/ --cov=backend/ --cov-report=term-missing
+      - name: Pytest con coverage XML
+        run: pytest backend/ --cov=backend/ --cov-report=xml
+
+      - name: SonarQube scanner
+        run: sonar-scanner -Dproject.settings=sonar-project.properties
+
+      - name: Levantar Django para ZAP
+        run: |
+          python manage.py runserver 0.0.0.0:8000 > django-ci.log 2>&1 &
+          sleep 15
+
+      - name: OWASP ZAP scan
+        run: docker run --rm --network host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:8000
+
+      - name: Build de imagen Docker
+        run: docker build -f backend/Dockerfile -t sistema-servicios-docentes:ci .

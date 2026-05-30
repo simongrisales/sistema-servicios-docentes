@@ -1,25 +1,19 @@
 from django.db import models
 
-from apps.academico.infrastructure.models import (
-    AulaModel,
-    GrupoModel,
-    HorarioBloqueModel,
-)
-
 
 class AsignacionModel(models.Model):
     grupo = models.ForeignKey(
-        GrupoModel,
+        "academico.GrupoModel",
         on_delete=models.CASCADE,
         related_name="asignaciones",
     )
     aula = models.ForeignKey(
-        AulaModel,
+        "academico.AulaModel",
         on_delete=models.PROTECT,
         related_name="asignaciones",
     )
     bloque_horario = models.ForeignKey(
-        HorarioBloqueModel,
+        "academico.HorarioBloqueModel",
         on_delete=models.CASCADE,
         related_name="asignaciones",
     )

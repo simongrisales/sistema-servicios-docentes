@@ -1,0 +1,92 @@
+<section class="dashboard-shell">
+    <div class="stats-grid">
+        {% for card in stats_cards %}
+        <article class="card metric-card">
+            <p class="card-subtitle">{{ card.label }}</p>
+            <div class="metric-card__value">{{ card.value }}</div>
+            <div class="metric-card__detail">{{ card.detail }}</div>
+        </article>
+        {% endfor %}
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Panorama operativo</p>
+                    <h3 class="card-title">Puntos clave del rol</h3>
+                </div>
+                <span class="badge badge-info">HTMX + Alpine + WS</span>
+            </div>
+            <div class="stack">
+                {% for item in highlights %}
+                <div class="alert alert-info">
+                    <strong>{{ item.title }}</strong>
+                    <p>{{ item.text }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Acciones rapidas</p>
+                    <h3 class="card-title">Panel de atajos</h3>
+                </div>
+            </div>
+            <div class="stack">
+                {% for action in quick_actions %}
+                <a class="btn btn-primary" href="{{ action.href }}">{{ action.label }}</a>
+                {% endfor %}
+            </div>
+            <div class="alert alert-warning" style="margin-top: 1rem;">
+                <strong>Nota operativa</strong>
+                <p>{{ support_notes.0|default:"Las acciones del dashboard se conectaran en tareas posteriores." }}</p>
+            </div>
+        </article>
+    </div>
+
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <p class="card-subtitle">Actividad reciente</p>
+                <h3 class="card-title">Ultimos eventos relevantes</h3>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Entidad</th>
+                        <th>Estado</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in recent_rows %}
+                    <tr>
+                        <td>{{ row.first }}</td>
+                        <td>{{ row.second }}</td>
+                        <td>{{ row.third }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <p class="card-subtitle">Soporte operativo</p>
+                <h3 class="card-title">Notas del rol</h3>
+            </div>
+        </div>
+        <ul class="support-list">
+            {% for note in support_notes %}
+            <li>{{ note }}</li>
+            {% endfor %}
+        </ul>
+    </article>
+</section>

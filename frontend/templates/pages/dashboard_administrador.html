@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Administrador | SDS UCO{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+    <header class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Rol: Administrador</span>
+            <h2>Centro de control institucional</h2>
+            <p class="section-lead">Gestiona usuarios, catalogo de parametros, logs centralizados y acceso a metricas del sistema.</p>
+        </div>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="/admin/">Abrir admin</a>
+            <a class="btn btn-ghost" href="{{ grafana_url }}" target="_blank" rel="noreferrer">Grafana</a>
+        </div>
+    </header>
+
+    {% include "pages/partials/dashboard_sections.html" %}
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Gestion de usuarios</p>
+                    <h3 class="card-title">Crear y asignar roles</h3>
+                </div>
+                <span class="badge badge-success">Activo</span>
+            </div>
+            <form class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" type="text" placeholder="Nombre de usuario">
+                    <input class="input" type="email" placeholder="Correo institucional">
+                    <input class="input" type="text" placeholder="Rol">
+                    <input class="input" type="text" placeholder="Departamento">
+                </div>
+                <textarea class="textarea" placeholder="Notas administrativas"></textarea>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="button">Crear usuario</button>
+                    <button class="btn btn-ghost" type="button">Asignar rol</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Catalogo de parametros</p>
+                    <h3 class="card-title">Reglas configurables del sistema</h3>
+                </div>
+                <span class="badge badge-info">JSONB</span>
+            </div>
+            <div class="stack">
+                <div class="alert alert-success">
+                    <strong>Regla activa</strong>
+                    <p>Capacidad maxima por aula y prioridad por numero de estudiantes.</p>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Clave</th>
+                                <th>Valor</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>max_conflicts</td>
+                                <td>0</td>
+                                <td><span class="badge badge-success">Activo</span></td>
+                            </tr>
+                            <tr>
+                                <td>semester_window</td>
+                                <td>2026-1</td>
+                                <td><span class="badge badge-info">Activo</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Logs centralizados</p>
+                    <h3 class="card-title">Ultimos eventos y errores</h3>
+                </div>
+                <span class="badge badge-warning">Revision</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Evento</th>
+                            <th>Severidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>08:14</td>
+                            <td>Asignacion completada</td>
+                            <td><span class="badge badge-success">Info</span></td>
+                        </tr>
+                        <tr>
+                            <td>08:19</td>
+                            <td>Conflicto de horario detectado</td>
+                            <td><span class="badge badge-warning">Warn</span></td>
+                        </tr>
+                        <tr>
+                            <td>08:31</td>
+                            <td>Sincronizacion de parametros</td>
+                            <td><span class="badge badge-info">Info</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Metricas</p>
+                    <h3 class="card-title">Salud general del sistema</h3>
+                </div>
+                <span class="badge badge-success">98% uptime</span>
+            </div>
+            <div class="stack">
+                <div class="alert alert-info">
+                    <strong>Total de aulas</strong>
+                    <p>48 unidades disponibles en campus principal y sedes.</p>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Total de grupos</strong>
+                    <p>126 grupos cargados para el semestre activo.</p>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Usuarios activos</strong>
+                    <p>34 cuentas con acceso vigente y autenticas.</p>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

@@ -11,7 +11,17 @@ from ..application.dtos import (
 )
 from ..application.use_cases import AsignacionUseCaseService
 from ..domain.entities import Asignacion, ResultadoAsignacion
-from ..domain.exceptions import AsignacionConflictoError
+from ..domain.exceptions import (
+    AsignacionConflictoError,
+    CapacidadInsuficienteError,
+    DatosIncompletosError,
+)
+from ..infrastructure.tasks import (
+    asignacion_automatica_task,
+    asignacion_masiva_task,
+    recalculo_automatico_task,
+    recalculo_task,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -43,9 +53,39 @@ def _make_service(
         exitoso=strategy_exitosa,
         mensaje="OK" if strategy_exitosa else "Fallo",
         conflicto_detalles=[] if strategy_exitosa else ["Conflicto X"],
+        asignaciones=[
+            {
+                "grupo_id": "1",
+                "aula_id": "2",
+                "bloque_horario_id": "3",
+                "semestre": "2026-1",
+                "estado": "CONFIRMADO",
+            }
+        ],
+    )
+    notificacion_mock = MagicMock()
+
+    return AsignacionUseCaseService(
+        asignacion_repo=repo_mock,
+        strategy=strategy_mock,
+        notificacion_service=notificacion_mock,
     )
 
-    return AsignacionUseCaseService(asignacion_repo=repo_mock, strategy=strategy_mock)
+
+class _RepoSinMetodosCapacidad:
+    def existe_conflicto(self, *args, **kwargs):
+        return False
+
+    def guardar(self, asignacion):
+        return asignacion
+
+
+class _Grupo:
+    num_estudiantes = 20
+
+
+class _Aula:
+    capacidad = 10
 
 
 def _input_dto() -> AsignacionInputDTO:
@@ -97,6 +137,55 @@ class TestEjecutarAsignacionAutomatica:
 
         service.asignacion_repo.guardar.assert_called_once()
 
+    def test_validar_conflictos_horario_lanza_excepcion(self):
+        service = _make_service(existe_conflicto=True)
+
+        with pytest.raises(AsignacionConflictoError):
+            service.validar_conflictos_horario("20", "30", "10", "2026-1")
+
+    def test_asignacion_masiva_sin_grupos_lanza_excepcion(self):
+        service = _make_service()
+
+        with pytest.raises(DatosIncompletosError):
+            service.ejecutar_asignacion_automatica_semestre(
+                "2026-1",
+                grupos=[],
+                aulas=[{"id": "a1", "capacidad": 20, "disponible": True, "activa": True}],
+            )
+
+    def test_asignacion_masiva_llama_repo_y_notificacion(self):
+        from django.contrib.auth import get_user_model
+
+        get_user_model().objects.get_or_create(
+            username="admin.tests",
+            defaults={
+                "is_staff": True,
+                "is_superuser": True,
+                "email": "admin.tests@uco.edu.co",
+            },
+        )
+
+        service = _make_service()
+        resultado = service.ejecutar_asignacion_automatica_semestre(
+            "2026-1",
+            grupos=[
+                {
+                    "id": "g1",
+                    "num_estudiantes": 10,
+                    "bloque_horario_id": "b1",
+                    "semestre": "2026-1",
+                }
+            ],
+            aulas=[
+                {"id": "a1", "capacidad": 20, "disponible": True, "activa": True},
+            ],
+        )
+
+        assert resultado.estado == "RESUMEN"
+        assert resultado.total_asignaciones == 1
+        service.asignacion_repo.guardar.assert_called()
+        service.notificacion_service.enviar_notificacion.assert_called_once()
+
 
 # ---------------------------------------------------------------------------
 # simular_asignacion
@@ -140,3 +229,68 @@ class TestVerificarCoberturaTotal:
 
         assert output.total_grupos == 0
         assert output.grupos_con_aula == 0
+
+    def test_cobertura_con_repositorio_devuelve_totales(self):
+        repo_mock = MagicMock()
+        repo_mock.contar_grupos_por_semestre.return_value = 12
+        repo_mock.contar_grupos_asignados_por_semestre.return_value = 9
+
+        service = AsignacionUseCaseService(asignacion_repo=repo_mock)
+        output = service.verificar_cobertura_total("2026-1")
+
+        assert output.total_grupos == 12
+        assert output.grupos_con_aula == 9
+
+
+class TestValidarCapacidad:
+    def test_validar_capacidad_sin_metodos_no_falla(self):
+        service = AsignacionUseCaseService(asignacion_repo=_RepoSinMetodosCapacidad())
+
+        output = service.ejecutar_asignacion_automatica(_input_dto())
+
+        assert output.estado == "CONFIRMADO"
+
+    def test_validar_capacidad_lanza_excepcion_si_aula_no_alcanza(self):
+        repo_mock = MagicMock()
+        repo_mock.existe_conflicto.return_value = False
+        repo_mock.obtener_grupo.return_value = _Grupo()
+        repo_mock.obtener_aula.return_value = _Aula()
+
+        service = AsignacionUseCaseService(asignacion_repo=repo_mock)
+
+        with pytest.raises(CapacidadInsuficienteError):
+            service.ejecutar_asignacion_automatica(_input_dto())
+
+
+class TestTareasCeleryAsignacion:
+    pytestmark = pytest.mark.django_db
+
+    def test_asignacion_automatica_task_devuelve_resumen(self):
+        resultado = asignacion_automatica_task.run("2026-1")
+
+        assert resultado["semestre_id"] == "2026-1"
+        assert resultado["estado"] in {"completada", "fallida"}
+        assert "detalle" in resultado or "total_asignaciones" in resultado
+
+    def test_recalculo_task_devuelve_estado(self):
+        resultado = recalculo_task.run("2026-1")
+
+        assert resultado["semestre_id"] == "2026-1"
+        assert resultado["estado"] == "programado"
+
+    def test_asignacion_masiva_task_cuenta_grupos(self):
+        resultado = asignacion_masiva_task.run([1, 2, 3], "2026-1")
+
+        assert resultado["total_procesados"] == 3
+        assert resultado["semestre"] == "2026-1"
+
+    def test_recalculo_automatico_task_legacy(self):
+        resultado = recalculo_automatico_task.run()
+
+        assert resultado["estado"] == "programado"
+
+    def test_recalculo_automatico_task_con_contexto(self):
+        resultado = recalculo_automatico_task.run("grupo-1", "2026-1")
+
+        assert resultado["grupo_id"] == "grupo-1"
+        assert resultado["semestre_id"] == "2026-1"

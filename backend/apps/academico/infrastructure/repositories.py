@@ -2,6 +2,8 @@ from collections.abc import Iterable
 from typing import Any
 from uuid import UUID
 
+from django.core.cache import cache
+
 from core.repositories import BaseRepository
 
 from ..domain.entities import Aula, Docente, Grupo, TipoAula
@@ -18,20 +20,32 @@ class AulaRepository(BaseRepository[Aula, UUID], IAulaRepository):
         return [self._to_domain(model) for model in AulaModel.objects.filter(**filters)]
 
     def create(self, data: dict[str, Any]) -> Aula:
-        return self._to_domain(AulaModel.objects.create(**data))
+        aula = self._to_domain(AulaModel.objects.create(**data))
+        cache.delete("academico:aulas_disponibles")
+        cache.delete("academico:aulas_disponibles_dto")
+        return aula
 
     def update(self, entity_id: UUID, data: dict[str, Any]) -> Aula:
         model = AulaModel.objects.get(id=entity_id)
         for field, value in data.items():
             setattr(model, field, value)
         model.save(update_fields=[*data.keys()])
+        cache.delete("academico:aulas_disponibles")
+        cache.delete("academico:aulas_disponibles_dto")
         return self._to_domain(model)
 
     def delete(self, entity_id: UUID) -> None:
         AulaModel.objects.filter(id=entity_id).update(activa=False)
+        cache.delete("academico:aulas_disponibles")
+        cache.delete("academico:aulas_disponibles_dto")
 
     def list_disponibles(self) -> Iterable[Aula]:
-        return self.list(disponible=True, activa=True)
+        cached = cache.get("academico:aulas_disponibles")
+        if cached is not None:
+            return cached
+        aulas = list(self.list(disponible=True, activa=True))
+        cache.set("academico:aulas_disponibles", aulas, 300)
+        return aulas
 
     def list_con_capacidad_minima(self, capacidad_minima: int) -> Iterable[Aula]:
         return self.list(capacidad__gte=capacidad_minima, activa=True)

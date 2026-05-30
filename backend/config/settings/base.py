@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 
 import environ
 
@@ -9,6 +10,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(str, "clave-insegura-solo-para-desarrollo"),
     DJANGO_SECRET_KEY=(str, "clave-insegura-solo-para-desarrollo"),
+    DATABASE_URL=(str, ""),
     # Permite Hostnames internos de Docker y/o requests directos a servicios.
     # Importante: Django valida request.get_host() contra ALLOWED_HOSTS.
     ALLOWED_HOSTS=(list, [
@@ -32,9 +34,16 @@ env = environ.Env(
     VALKEY_PORT=(int, 6379),
     VALKEY_URL=(str, ""),
     CHANNEL_LAYERS_URL=(str, ""),
+    JWT_SECRET_KEY=(str, "jwt-inseguro-solo-para-desarrollo"),
     JWT_SECRET=(str, "jwt-inseguro-solo-para-desarrollo"),
+    JWT_ACCESS_TOKEN_LIFETIME=(int, 60),
+    JWT_REFRESH_TOKEN_LIFETIME=(int, 7),
     RECAPTCHA_PUBLIC_KEY=(str, ""),
     RECAPTCHA_PRIVATE_KEY=(str, ""),
+    PROMETHEUS_PORT=(int, 9090),
+    GRAFANA_PORT=(int, 3000),
+    GRAFANA_ADMIN_USER=(str, "admin"),
+    GRAFANA_ADMIN_PASSWORD=(str, "admin"),
 )
 
 
@@ -45,6 +54,7 @@ if env_file.exists():
 SECRET_KEY = env("SECRET_KEY") or env("DJANGO_SECRET_KEY")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+DATABASE_URL = env("DATABASE_URL")
 
 # Normalización: dependiendo de cómo Docker/ENV inyecte variables,
 # ALLOWED_HOSTS puede venir como lista, string ("a,b,c") o string con comas.
@@ -84,6 +94,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_ratelimit",
     "django_recaptcha",
+    "notifications.apps.NotificationsConfig",
     "core",
     "apps.usuarios",
     "apps.academico",
@@ -91,7 +102,7 @@ INSTALLED_APPS = [
     "apps.parametros",
     "apps.reservas",
     "apps.reportes",
-    "apps.notificaciones",
+    "apps.notificaciones.apps.NotificacionesConfig",
 ]
 
 MIDDLEWARE = [
@@ -141,6 +152,9 @@ DATABASES = {
     }
 }
 
+if DATABASE_URL:
+    DATABASES["default"] = env.db("DATABASE_URL")
+
 VALKEY_URL = env("VALKEY_URL") or f"redis://{env('VALKEY_HOST')}:{env('VALKEY_PORT')}/0"
 
 CACHES = {
@@ -164,11 +178,28 @@ CHANNEL_LAYERS = {
 
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=VALKEY_URL)
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=VALKEY_URL)
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_RESULT_SERIALIZER = "json"
 CELERY_TASK_IGNORE_RESULT = False
 CELERY_TIMEZONE = "America/Bogota"
-SIMPLE_JWT = {"SIGNING_KEY": env("JWT_SECRET")}
+SIMPLE_JWT = {
+    "SIGNING_KEY": env("JWT_SECRET_KEY") or env("JWT_SECRET"),
+    "ALGORITHM": "HS256",
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=env.int("JWT_ACCESS_TOKEN_LIFETIME", default=60)
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=env.int("JWT_REFRESH_TOKEN_LIFETIME", default=7)
+    ),
+}
 RECAPTCHA_PUBLIC_KEY = env("RECAPTCHA_PUBLIC_KEY")
 RECAPTCHA_PRIVATE_KEY = env("RECAPTCHA_PRIVATE_KEY")
+PROMETHEUS_PORT = env("PROMETHEUS_PORT")
+GRAFANA_PORT = env("GRAFANA_PORT")
+GRAFANA_ADMIN_USER = env("GRAFANA_ADMIN_USER")
+GRAFANA_ADMIN_PASSWORD = env("GRAFANA_ADMIN_PASSWORD")
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -188,7 +219,12 @@ SPECTACULAR_SETTINGS = {
 LANGUAGE_CODE = "es-co"
 TIME_ZONE = "America/Bogota"
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
+LANGUAGES = [
+    ("es", "Español"),
+    ("en", "English"),
+]
 
 # I18N: rutas para mensajes de Django en formatos nativos.
 LOCALE_PATHS = [BASE_DIR / "locale"]
@@ -208,6 +244,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "usuarios.UsuarioModel"
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"
+LOGOUT_REDIRECT_URL = "/login/"
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": (

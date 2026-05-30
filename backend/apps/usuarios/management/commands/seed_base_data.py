@@ -1,17 +1,8 @@
 from datetime import time
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-
-from apps.academico.infrastructure.models import (
-    AulaModel,
-    CursoModel,
-    DocenteModel,
-    FacultadModel,
-    GrupoModel,
-    HorarioBloqueModel,
-    ProgramaModel,
-)
 from apps.usuarios.infrastructure.models import RoleModel
 
 ROLES = [
@@ -78,6 +69,18 @@ class Command(BaseCommand):
                 user.save()
 
     def _crear_datos_academicos(self) -> None:
+        FacultadModel = apps.get_model("academico", "FacultadModel")
+        ProgramaModel = apps.get_model("academico", "ProgramaModel")
+        DocenteModel = apps.get_model("academico", "DocenteModel")
+        CursoModel = apps.get_model("academico", "CursoModel")
+        AulaModel = apps.get_model("academico", "AulaModel")
+        GrupoModel = apps.get_model("academico", "GrupoModel")
+        HorarioBloqueModel = apps.get_model("academico", "HorarioBloqueModel")
+        CatalogoParametroModel = apps.get_model(
+            "parametros",
+            "CatalogoParametroModel",
+        )
+
         facultad, _ = FacultadModel.objects.update_or_create(
             codigo="ING",
             defaults={"nombre": "Facultad de Ingenieria", "activa": True},
@@ -134,9 +137,6 @@ class Command(BaseCommand):
                 "activo": True,
             },
         )
-
-        # Seed de parámetros (app: parametros)
-        from apps.parametros.infrastructure.models import CatalogoParametroModel
 
         parametros_seed = [
             {

@@ -9,7 +9,7 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
         self,
         grupos: list[dict],
         aulas: list[dict],
-        reglas: list[ReglaAsignacion],
+        reglas: list[ReglaAsignacion] | None = None,
     ) -> ResultadoAsignacion:
         del reglas
         grupos_ordenados = sorted(
@@ -76,6 +76,16 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
                         f"{bloque_id}."
                     )
 
+                    asignaciones.append(
+                        {
+                            "grupo_id": grupo_id,
+                            "aula_id": None,
+                            "bloque_horario_id": bloque_id,
+                            "semestre": semestre,
+                            "estado": "PENDIENTE",
+                        }
+                    )
+
                     continue
 
             aula_id = str(aula.get("id") or aula.get("aula_id"))
@@ -97,7 +107,6 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
                     "No se pudo asignar aula a todos los grupos por conflictos de "
                     "capacidad o disponibilidad."
                 ),
-
                 conflicto_detalles=conflictos,
                 asignaciones=asignaciones,
             )
@@ -115,7 +124,7 @@ class PrioridadEstudiantesStrategy(IAsignacionStrategy):
         bloque_id: str,
         ocupacion: set[tuple[str, str]],
         tipo_requerido: str | None = None,
-    ) -> dict | None:
+        ) -> dict | None:
         for aula in aulas:
             aula_id = str(aula.get("id") or aula.get("aula_id"))
             if aula.get("capacidad", 0) < estudiantes:

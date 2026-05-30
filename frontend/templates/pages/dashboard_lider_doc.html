@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Lider DOC | SDS UCO{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+    <header class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Rol: Lider DOC</span>
+            <h2>Operacion de asignacion automatica</h2>
+            <p class="section-lead">Ejecuta, simula y supervisa la asignacion de aulas con cobertura total y seguimiento en tiempo real.</p>
+        </div>
+        <div class="hero-actions">
+            <button class="btn btn-primary" type="button">Ejecutar asignacion automatica</button>
+            <button class="btn btn-ghost" type="button">Ejecutar simulacion</button>
+        </div>
+    </header>
+
+    {% include "pages/partials/dashboard_sections.html" %}
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Ejecucion actual</p>
+                    <h3 class="card-title">Estado del proceso de asignacion</h3>
+                </div>
+                <span class="badge badge-success">Activo</span>
+            </div>
+            <div class="progress-bar" aria-label="Progreso de asignacion">
+                <div class="progress-bar__fill" style="width: 72%;"></div>
+            </div>
+            <div class="stack" style="margin-top: 1rem;">
+                <div class="alert alert-success">
+                    <strong>Proceso estable</strong>
+                    <p>82 grupos procesados, 10 pendientes y 2 con conflicto revisado.</p>
+                </div>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Semestre</th>
+                                <th>Estado</th>
+                                <th>Observacion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2026-1</td>
+                                <td><span class="badge badge-success">En ejecucion</span></td>
+                                <td>Ultima corrida 8 min</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Validacion</p>
+                    <h3 class="card-title">Cobertura total de grupos</h3>
+                </div>
+                <span class="badge badge-info">92%</span>
+            </div>
+            <div class="stack">
+                <div class="alert alert-info">
+                    <strong>Reglas del semestre</strong>
+                    <p>Prioridad por estudiantes, capacidad suficiente y conflicto de horario cero.</p>
+                </div>
+                <div class="alert alert-warning">
+                    <strong>Accion requerida</strong>
+                    <p>Revisar grupos pendientes antes de publicar la asignacion final.</p>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Simulacion</p>
+                    <h3 class="card-title">Probar escenario sin persistencia</h3>
+                </div>
+            </div>
+            <form class="stack">
+                {% csrf_token %}
+                <div class="field-grid">
+                    <input class="input" type="text" placeholder="Semestre">
+                    <input class="input" type="text" placeholder="Criterio de simulacion">
+                </div>
+                <textarea class="textarea" placeholder="Observaciones de simulacion"></textarea>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="button">Lanzar simulacion</button>
+                    <button class="btn btn-ghost" type="button">Guardar borrador</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Reportes</p>
+                    <h3 class="card-title">Resumen de asignaciones</h3>
+                </div>
+                <span class="badge badge-warning">Pendientes</span>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Indicador</th>
+                            <th>Asignadas</th>
+                            <th>Pendientes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Aulas</td>
+                            <td>116</td>
+                            <td>10</td>
+                        </tr>
+                        <tr>
+                            <td>Grupos</td>
+                            <td>118</td>
+                            <td>8</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

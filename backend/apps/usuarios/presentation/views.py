@@ -1,3 +1,9 @@
+from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
+from django.views.generic import RedirectView, TemplateView
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -5,13 +11,39 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from django_recaptcha.fields import ReCaptchaField
-from django_recaptcha.widgets import ReCaptchaV2Checkbox
+from django_recaptcha.widgets import ReCaptchaV3
 
 from ..application.dtos import UsuarioInputDTO
-
 from ..application.use_cases import CrearUsuario, ListarRoles, ListarUsuarios
 from ..infrastructure.repositories import UsuariosRepository
 from .serializers import RolSerializer, UsuarioSerializer
+
+
+ROLE_DASHBOARD_URLS = {
+    "administrador": "dashboard_administrador",
+    "lider_sd": "dashboard_lider_doc",
+    "lider_doc": "dashboard_lider_doc",
+    "auxiliar_sd": "dashboard_auxiliar_doc",
+    "auxiliar_doc": "dashboard_auxiliar_doc",
+    "facultad": "dashboard_facultad",
+    "admisiones": "dashboard_admisiones",
+}
+
+ROLE_LABELS = {
+    "administrador": _("Administrador"),
+    "lider_sd": _("Lider DOC"),
+    "auxiliar_sd": _("Auxiliar DOC"),
+    "facultad": _("Facultad"),
+    "admisiones": _("Admisiones"),
+}
+
+
+def dashboard_name_for_role(role_code: str | None) -> str:
+    return ROLE_DASHBOARD_URLS.get((role_code or "").lower(), "dashboard_administrador")
+
+
+def dashboard_label_for_role(role_code: str | None) -> str:
+    return ROLE_LABELS.get((role_code or "").lower(), _("Administrador"))
 
 
 class LoginView(TokenObtainPairView):
@@ -22,26 +54,13 @@ class LoginConRecaptchaView(TokenObtainPairView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        """Valida recaptcha_token (cuando aplique) y luego autentica con simplejwt."""
+        """Valida recaptcha_token cuando aplica y luego autentica con simplejwt."""
         recaptcha_token = request.data.get("recaptcha_token", "")
 
-        # django-recaptcha==4.0.0 no expone recaptcha_client en la misma ruta.
-        # Validamos vía el formulario field para mantener compatibilidad.
         if recaptcha_token:
-            field = ReCaptchaField(widget=ReCaptchaV2Checkbox())
+            field = ReCaptchaField(widget=ReCaptchaV3(action="login"))
             field.clean(recaptcha_token, None)
-
-
         return super().post(request, *args, **kwargs)
-
-
-    def _get_client_ip(self, request):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0]
-        else:
-            ip = request.META.get("REMOTE_ADDR")
-        return ip
 
 
 class UsuarioViewSet(viewsets.ViewSet):
@@ -75,3 +94,251 @@ class UsuarioViewSet(viewsets.ViewSet):
     def roles(self, request):
         roles = ListarRoles(self._repo()).execute()
         return Response(RolSerializer(roles, many=True).data)
+
+
+class BaseDashboardView(LoginRequiredMixin, TemplateView):
+    required_role_code: str | None = None
+    dashboard_url_name = "dashboard_administrador"
+    page_title = _("Dashboard")
+    dashboard_brand = _("Sistema de Servicios Docentes")
+    dashboard_description = _("Panel de operacion academica UCO")
+    sidebar_items: list[dict[str, str]] = []
+    stats_cards: list[dict[str, str]] = []
+    highlights: list[dict[str, str]] = []
+    recent_rows: list[dict[str, str]] = []
+    quick_actions: list[dict[str, str]] = []
+    support_notes: list[str] = []
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            current_role = (getattr(request.user, "role_code", "") or "").lower()
+            if self.required_role_code and current_role and current_role != self.required_role_code:
+                return redirect(dashboard_name_for_role(current_role))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_role = (getattr(self.request.user, "role_code", "") or "").lower()
+        context.update(
+            {
+                "page_title": self.page_title,
+                "dashboard_brand": self.dashboard_brand,
+                "dashboard_description": self.dashboard_description,
+                "dashboard_url_name": self.dashboard_url_name,
+                "dashboard_role_code": user_role,
+                "dashboard_role_label": dashboard_label_for_role(user_role),
+                "dashboard_sidebar_items": self.sidebar_items,
+                "dashboard_notifications_count": 3,
+                "grafana_url": f"http://localhost:{settings.GRAFANA_PORT}",
+                "prometheus_url": f"http://localhost:{settings.PROMETHEUS_PORT}",
+                "stats_cards": self.stats_cards,
+                "highlights": self.highlights,
+                "recent_rows": self.recent_rows,
+                "quick_actions": self.quick_actions,
+                "support_notes": self.support_notes,
+            }
+        )
+        return context
+
+
+class DashboardRedirectView(LoginRequiredMixin, RedirectView):
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        role_code = (getattr(self.request.user, "role_code", "") or "").lower()
+        return reverse(dashboard_name_for_role(role_code))
+
+
+class AdministradorDashboardView(BaseDashboardView):
+    required_role_code = "administrador"
+    dashboard_url_name = "dashboard_administrador"
+    page_title = _("Dashboard Administrador")
+    dashboard_description = _("Centro de control institucional")
+    sidebar_items = [
+        {"label": _("Gestion de usuarios"), "url_name": "dashboard_administrador", "icon": "users"},
+        {"label": _("Catalogo de parametros"), "url_name": "dashboard_administrador", "icon": "settings"},
+        {"label": _("Logs centralizados"), "url_name": "dashboard_administrador", "icon": "logs"},
+        {"label": _("Metricas del sistema"), "url_name": "dashboard_administrador", "icon": "metrics"},
+    ]
+    stats_cards = [
+        {"label": _("Aulas registradas"), "value": "48", "detail": _("Infraestructura activa")},
+        {"label": _("Grupos cargados"), "value": "126", "detail": _("Semestre vigente")},
+        {"label": _("Usuarios activos"), "value": "34", "detail": _("Acceso con rol validado")},
+        {"label": _("Alertas abiertas"), "value": "7", "detail": _("Requieren revision")},
+    ]
+    highlights = [
+        {"title": _("Gestion de usuarios"), "text": _("Crear, editar y asignar roles institucionales con control de acceso.")},
+        {"title": _("Catalogo de parametros"), "text": _("Configurar reglas del sistema y parametros de negocio sin tocar codigo.")},
+        {"title": _("Logs centralizados"), "text": _("Supervisar eventos, errores y trazas de operacion en menos de un minuto.")},
+        {"title": _("Grafana y Prometheus"), "text": _("Acceso directo a metricas y alertas de observabilidad del stack local.")},
+    ]
+    recent_rows = [
+        {"first": "usuarios", "second": _("Alta de usuario lider_doc"), "third": _("Hace 4 min")},
+        {"first": "parametros", "second": _("Regla de capacidad maxima actualizada"), "third": _("Hace 17 min")},
+        {"first": "logs", "second": _("Sincronizacion de catalogos completada"), "third": _("Hace 31 min")},
+    ]
+    quick_actions = [
+        {"label": _("Abrir Django Admin"), "href": "/admin/"},
+        {"label": _("Ver Grafana"), "href": f"http://localhost:{settings.GRAFANA_PORT}"},
+        {"label": _("Ver Prometheus"), "href": f"http://localhost:{settings.PROMETHEUS_PORT}"},
+    ]
+    support_notes = [
+        _("Los ultimos eventos del sistema deben revisarse antes del inicio de semestre."),
+        _("El catalogo de parametros controla las reglas institucionales de asignacion."),
+    ]
+
+
+class LiderDocDashboardView(BaseDashboardView):
+    required_role_code = "lider_sd"
+    dashboard_url_name = "dashboard_lider_doc"
+    page_title = _("Dashboard Lider DOC")
+    dashboard_description = _("Ejecucion y supervision de la asignacion automatica")
+    sidebar_items = [
+        {"label": _("Ejecutar asignacion"), "url_name": "dashboard_lider_doc", "icon": "play"},
+        {"label": _("Simulacion"), "url_name": "dashboard_lider_doc", "icon": "beaker"},
+        {"label": _("Cobertura"), "url_name": "dashboard_lider_doc", "icon": "chart"},
+        {"label": _("Reportes"), "url_name": "dashboard_lider_doc", "icon": "report"},
+    ]
+    stats_cards = [
+        {"label": _("Grupos cubiertos"), "value": "118", "detail": _("92% de cobertura")},
+        {"label": _("Grupos pendientes"), "value": "10", "detail": _("Sin aula asignada")},
+        {"label": _("Conflictos"), "value": "2", "detail": _("Revisar cruces detectados")},
+        {"label": _("Estado proceso"), "value": _("Activo"), "detail": _("Ultima corrida hace 8 min")},
+    ]
+    highlights = [
+        {"title": _("Asignacion automatica"), "text": _("Proceso principal con confirmacion y seguimiento en tiempo real.")},
+        {"title": _("Simulacion de escenarios"), "text": _("Probar combinaciones sin persistir cambios en base de datos.")},
+        {"title": _("Cobertura total"), "text": _("Validar que todos los grupos queden atendidos antes de publicar.")},
+        {"title": _("Reportes operativos"), "text": _("Exportar resumenes de ocupacion y conflictos detectados.")},
+    ]
+    recent_rows = [
+        {"first": "grupo 3A", "second": _("Asignado a Aula 204"), "third": _("Correcto")},
+        {"first": "grupo 2B", "second": _("Pendiente por capacidad"), "third": _("Revisar")},
+        {"first": "grupo 4C", "second": _("Simulacion exitosa"), "third": _("Sin cambios")},
+    ]
+    quick_actions = [
+        {"label": _("Ejecutar asignacion"), "href": "#asignacion"},
+        {"label": _("Ejecutar simulacion"), "href": "#simulacion"},
+        {"label": _("Ver reportes"), "href": "#reportes"},
+    ]
+    support_notes = [
+        _("El boton principal debe usar confirmacion antes de ejecutar la asignacion real."),
+        _("La barra de progreso se alimentara por WebSocket en la siguiente tarea."),
+    ]
+
+
+class AuxiliarDocDashboardView(BaseDashboardView):
+    required_role_code = "auxiliar_sd"
+    dashboard_url_name = "dashboard_auxiliar_doc"
+    page_title = _("Dashboard Auxiliar DOC")
+    dashboard_description = _("Gestion parcial de asignaciones y reservas temporales")
+    sidebar_items = [
+        {"label": _("Asignaciones parciales"), "url_name": "dashboard_auxiliar_doc", "icon": "edit"},
+        {"label": _("Calendario semanal"), "url_name": "dashboard_auxiliar_doc", "icon": "calendar"},
+        {"label": _("Reservas activas"), "url_name": "dashboard_auxiliar_doc", "icon": "clock"},
+        {"label": _("Buscador de aulas"), "url_name": "dashboard_auxiliar_doc", "icon": "search"},
+    ]
+    stats_cards = [
+        {"label": _("Asignaciones del dia"), "value": "14", "detail": _("Tiempo parcial gestionado")},
+        {"label": _("Reservas activas"), "value": "6", "detail": _("Con expiracion controlada")},
+        {"label": _("Aulas libres"), "value": "19", "detail": _("Disponibilidad inmediata")},
+        {"label": _("Conflictos resueltos"), "value": "3", "detail": _("Sin duplicidad de horario")},
+    ]
+    highlights = [
+        {"title": _("Asignaciones parciales"), "text": _("Crear, editar y eliminar registros de forma rapida.")},
+        {"title": _("Calendario semanal"), "text": _("Visualizar la semana operativa con tareas y reservas.")},
+        {"title": _("Reservas temporales"), "text": _("Monitorear cupos activos y su expiracion en tiempo util.")},
+        {"title": _("Buscador de aulas"), "text": _("Filtrar por horario, capacidad y tipo de espacio.")},
+    ]
+    recent_rows = [
+        {"first": "Aula 108", "second": _("Disponible 10:00 - 12:00"), "third": _("Capacidad 35")},
+        {"first": "Aula 204", "second": _("Reserva activa hasta 14:00"), "third": _("Pendiente")},
+        {"first": "Sala 2", "second": _("Asignacion parcial actualizada"), "third": _("OK")},
+    ]
+    quick_actions = [
+        {"label": _("Nueva asignacion"), "href": "#asignaciones"},
+        {"label": _("Nueva reserva"), "href": "#reservas"},
+        {"label": _("Buscar aula"), "href": "#buscador"},
+    ]
+    support_notes = [
+        _("El auxiliar debe ver solo operaciones parciales y reservas temporales."),
+        _("La busqueda de aulas se refrescara en tiempo real en la tarea siguiente."),
+    ]
+
+
+class FacultadDashboardView(BaseDashboardView):
+    required_role_code = "facultad"
+    dashboard_url_name = "dashboard_facultad"
+    page_title = _("Dashboard Facultad")
+    dashboard_description = _("Ingreso de grupos y seguimiento de asignacion")
+    sidebar_items = [
+        {"label": _("Ingresar grupo"), "url_name": "dashboard_facultad", "icon": "form"},
+        {"label": _("Grupos ingresados"), "url_name": "dashboard_facultad", "icon": "list"},
+        {"label": _("Disponibilidad"), "url_name": "dashboard_facultad", "icon": "signal"},
+        {"label": _("Consulta de aula"), "url_name": "dashboard_facultad", "icon": "search"},
+    ]
+    stats_cards = [
+        {"label": _("Grupos ingresados"), "value": "41", "detail": _("Esperando validacion")},
+        {"label": _("Grupos asignados"), "value": "33", "detail": _("Con aula definida")},
+        {"label": _("Aulas disponibles"), "value": "18", "detail": _("Actualizacion en vivo")},
+        {"label": _("Alertas"), "value": "4", "detail": _("Datos pendientes")},
+    ]
+    highlights = [
+        {"title": _("Ingreso de grupo"), "text": _("Materia, docente, horario y cupo por grupo de la facultad.")},
+        {"title": _("Estado de asignacion"), "text": _("Cada grupo muestra si ya fue asignado o sigue pendiente.")},
+        {"title": _("Disponibilidad en vivo"), "text": _("Indicador conectado al estado de aulas por WebSocket.")},
+        {"title": _("Consulta de aula"), "text": _("Ver rapidamente que aula fue asignada a cada grupo.")},
+    ]
+    recent_rows = [
+        {"first": "Calculo I", "second": _("Grupo 1A"), "third": _("Pendiente")},
+        {"first": "Algoritmos", "second": _("Grupo 2B"), "third": _("Asignado")},
+        {"first": "Bases de datos", "second": _("Grupo 3C"), "third": _("Validado")},
+    ]
+    quick_actions = [
+        {"label": _("Nuevo grupo"), "href": "#grupo"},
+        {"label": _("Consultar aula"), "href": "#consulta"},
+        {"label": _("Actualizar disponibilidad"), "href": "#disponibilidad"},
+    ]
+    support_notes = [
+        _("Los datos ingresados por la facultad alimentan la asignacion automatica."),
+        _("El estado de aula debe refrescarse sin recargar la pagina."),
+    ]
+
+
+class AdmisionesDashboardView(BaseDashboardView):
+    required_role_code = "admisiones"
+    dashboard_url_name = "dashboard_admisiones"
+    page_title = _("Dashboard Admisiones")
+    dashboard_description = _("Carga masiva de grupos y seguimiento de validacion")
+    sidebar_items = [
+        {"label": _("Carga masiva"), "url_name": "dashboard_admisiones", "icon": "upload"},
+        {"label": _("Progreso"), "url_name": "dashboard_admisiones", "icon": "progress"},
+        {"label": _("Validacion"), "url_name": "dashboard_admisiones", "icon": "check"},
+        {"label": _("Cobertura"), "url_name": "dashboard_admisiones", "icon": "report"},
+    ]
+    stats_cards = [
+        {"label": _("Grupos cargados"), "value": "52", "detail": _("Carga masiva activa")},
+        {"label": _("Procesados"), "value": "47", "detail": _("Validacion completa")},
+        {"label": _("Errores"), "value": "5", "detail": _("Requieren correccion")},
+        {"label": _("Cobertura"), "value": "90%", "detail": _("Progreso del lote")},
+    ]
+    highlights = [
+        {"title": _("Carga masiva"), "text": _("Ingresar grupos con numero de estudiantes en un solo flujo.")},
+        {"title": _("Progreso en tiempo real"), "text": _("Mostrar avance del lote con Celery y WebSocket.")},
+        {"title": _("Tabla de validacion"), "text": _("Listar grupos con su estado y observaciones de control.")},
+        {"title": _("Reportes de cobertura"), "text": _("Consultar si la carga quedo lista para la asignacion.")},
+    ]
+    recent_rows = [
+        {"first": "Grupo 1A", "second": _("Validado"), "third": _("35 estudiantes")},
+        {"first": "Grupo 2B", "second": _("En proceso"), "third": _("22 estudiantes")},
+        {"first": "Grupo 3C", "second": _("Con error"), "third": _("Campo faltante")},
+    ]
+    quick_actions = [
+        {"label": _("Cargar archivo"), "href": "#carga"},
+        {"label": _("Ver progreso"), "href": "#progreso"},
+        {"label": _("Reporte de cobertura"), "href": "#cobertura"},
+    ]
+    support_notes = [
+        _("Admisiones solo ingresa la cantidad real de estudiantes por grupo."),
+        _("La barra de progreso se conectara al worker Celery en la siguiente tarea."),
+    ]

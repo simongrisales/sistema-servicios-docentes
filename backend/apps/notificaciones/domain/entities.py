@@ -6,16 +6,26 @@ from uuid import uuid4
 class TipoNotificacion:
     """Tipos institucionales soportados por el modulo de notificaciones."""
 
-    CONFLICTO = "conflict"
-    CONFIRMACION = "confirmation"
-    ALERTA_MANTENIMIENTO = "maintenance"
-    INFO_USUARIO = "user_info"
+    ASIGNACION_COMPLETADA = "asignacion_completada"
+    CONFLICTO_DETECTADO = "conflicto_detectado"
+    RESERVA_CONFIRMADA = "reserva_confirmada"
+    RESERVA_EXPIRADA = "reserva_expirada"
+
+    # Alias de compatibilidad con nombres previos del sistema.
+    CONFIRMACION = ASIGNACION_COMPLETADA
+    CONFLICTO = CONFLICTO_DETECTADO
+    ALERTA_MANTENIMIENTO = RESERVA_CONFIRMADA
+    INFO_USUARIO = RESERVA_EXPIRADA
 
     @classmethod
     def values(cls) -> tuple[str, ...]:
         return (
-            cls.CONFLICTO,
+            cls.ASIGNACION_COMPLETADA,
+            cls.CONFLICTO_DETECTADO,
+            cls.RESERVA_CONFIRMADA,
+            cls.RESERVA_EXPIRADA,
             cls.CONFIRMACION,
+            cls.CONFLICTO,
             cls.ALERTA_MANTENIMIENTO,
             cls.INFO_USUARIO,
         )

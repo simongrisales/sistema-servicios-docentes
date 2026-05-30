@@ -34,6 +34,6 @@ class IAsignacionStrategy(ABC):
         self,
         grupos: list[dict],
         aulas: list[dict],
-        reglas: list[ReglaAsignacion],
+        reglas: list[ReglaAsignacion] | None = None,
     ) -> ResultadoAsignacion:
         raise NotImplementedError

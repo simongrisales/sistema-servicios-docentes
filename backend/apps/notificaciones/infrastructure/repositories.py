@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.repositories import BaseRepository
+from core.sanitizers import BleachSanitizerMixin
 
 from ..domain.entities import Notificacion
 from ..domain.interfaces import INotificacionRepository
@@ -12,9 +13,12 @@ from .models import NotificacionModel
 
 
 class NotificacionRepository(
+    BleachSanitizerMixin,
     BaseRepository[Notificacion, str], INotificacionRepository
 ):
     """Repositorio concreto de notificaciones usando Django ORM."""
+
+    text_fields = ("titulo", "mensaje")
 
     def get(self, entity_id: str) -> Notificacion | None:
         return self.get_by_id(entity_id)
@@ -24,7 +28,7 @@ class NotificacionRepository(
         return [self._to_domain(instance) for instance in queryset]
 
     def create(self, data: dict[str, Any]) -> Notificacion:
-        model = NotificacionModel.objects.create(**data)
+        model = NotificacionModel.objects.create(**self.sanitize_payload(data))
         return self._to_domain(model)
 
     def update(self, entity_id: str, data: dict[str, Any]) -> Notificacion:
@@ -54,8 +58,8 @@ class NotificacionRepository(
         model = NotificacionModel.objects.create(
             notificacion_id=notification.notificacion_id,
             tipo=notification.tipo,
-            titulo=notification.titulo,
-            mensaje=notification.mensaje,
+            titulo=self.sanitize_payload({"titulo": notification.titulo})["titulo"],
+            mensaje=self.sanitize_payload({"mensaje": notification.mensaje})["mensaje"],
             usuario_destino_id=notification.usuario_destino_id,
             lectura_requerida=notification.lectura_requerida,
             es_leida=notification.es_leida,

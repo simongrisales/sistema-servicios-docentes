@@ -1,0 +1,33 @@
+<header class="navbar-shell">
+    <div class="navbar-branding">
+        <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Alternar navegación">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div>
+            <p class="navbar-kicker">{{ dashboard_brand|default:"Sistema de Servicios Docentes" }}</p>
+            <h1 class="navbar-title">{{ page_title|default:"Dashboard" }}</h1>
+        </div>
+    </div>
+
+    <div class="navbar-meta">
+        <a class="nav-link nav-link-ghost" href="{{ prometheus_url|default:'#' }}" target="_blank" rel="noreferrer">Prometheus</a>
+        <a class="nav-link nav-link-ghost" href="{{ grafana_url|default:'#' }}" target="_blank" rel="noreferrer">Grafana</a>
+
+        <button class="notification-chip" type="button" aria-label="Notificaciones">
+            <span class="notification-bell" aria-hidden="true">🔔</span>
+            <span id="notification-count-badge" class="notification-badge">{{ dashboard_notifications_count|default:0 }}</span>
+        </button>
+
+        <div class="user-chip">
+            <div class="user-chip__avatar" aria-hidden="true">
+                {{ request.user.username|default:"U"|slice:":1"|upper }}
+            </div>
+            <div class="user-chip__meta">
+                <strong>{{ request.user.get_full_name|default:request.user.username|default:"Invitado" }}</strong>
+                <span>{{ dashboard_role_label|default:"Sin rol" }}</span>
+            </div>
+        </div>
+    </div>
+</header>

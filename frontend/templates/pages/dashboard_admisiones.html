@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Admisiones | SDS UCO{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+    <header class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Rol: Admisiones</span>
+            <h2>Carga masiva de grupos y cobertura</h2>
+            <p class="section-lead">Ingresa lotes de grupos con numero de estudiantes y sigue el progreso de validacion en tiempo real.</p>
+        </div>
+        <div class="hero-actions">
+            <button class="btn btn-primary" type="button">Cargar archivo</button>
+            <button class="btn btn-ghost" type="button">Ver cobertura</button>
+        </div>
+    </header>
+
+    {% include "pages/partials/dashboard_sections.html" %}
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Carga masiva</p>
+                    <h3 class="card-title">Grupos con numero de estudiantes</h3>
+                </div>
+                <span class="badge badge-success">Celery + WS</span>
+            </div>
+            <form class="stack">
+                {% csrf_token %}
+                <input class="input" type="file" accept=".csv,.xlsx">
+                <div class="field-grid">
+                    <input class="input" type="text" placeholder="Semestre">
+                    <input class="input" type="text" placeholder="Archivo cargado">
+                </div>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="button">Iniciar carga</button>
+                    <button class="btn btn-ghost" type="button">Descargar plantilla</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Progreso en tiempo real</p>
+                    <h3 class="card-title">Avance de procesamiento</h3>
+                </div>
+                <span class="badge badge-info">90%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-bar__fill" style="width: 90%;"></div>
+            </div>
+            <div class="stack" style="margin-top: 1rem;">
+                <div class="alert alert-success">
+                    <strong>Procesando lotes</strong>
+                    <p>47 grupos validados de 52 cargados.</p>
+                </div>
+                <div class="alert alert-warning">
+                    <strong>Observacion</strong>
+                    <p>5 registros requieren ajuste de datos antes de publicar.</p>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    <div class="dashboard-grid two-cols">
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Tabla de validacion</p>
+                    <h3 class="card-title">Estado de cada grupo</h3>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Estado</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1A</td><td><span class="badge badge-success">Validado</span></td><td>35 estudiantes</td></tr>
+                        <tr><td>2B</td><td><span class="badge badge-warning">En proceso</span></td><td>22 estudiantes</td></tr>
+                        <tr><td>3C</td><td><span class="badge badge-danger">Error</span></td><td>Campo faltante</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <div>
+                    <p class="card-subtitle">Cobertura</p>
+                    <h3 class="card-title">Reportes operativos</h3>
+                </div>
+            </div>
+            <div class="stack">
+                <div class="alert alert-info">
+                    <strong>Grupos cargados</strong>
+                    <p>52 registros en el lote actual.</p>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Grupos validados</strong>
+                    <p>47 registros listos para asignacion.</p>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Grupos pendientes</strong>
+                    <p>5 registros requieren correccion de datos.</p>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}
