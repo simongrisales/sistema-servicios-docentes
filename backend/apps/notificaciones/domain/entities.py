@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 
@@ -58,6 +58,6 @@ class Notificacion:
             tipo=tipo,
             titulo=titulo,
             mensaje=mensaje,
-            fecha_creacion=datetime.utcnow(),
+            fecha_creacion=datetime.now(UTC),
             usuario_destino_id=destino_id,
         )

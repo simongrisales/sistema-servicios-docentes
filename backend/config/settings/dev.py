@@ -16,8 +16,9 @@ STORAGES = {
 
 use_sqlite = env.bool("USE_SQLITE", default=False)
 is_test_run = "test" in sys.argv or "pytest" in sys.modules
+use_sqlite_for_tests = env.bool("USE_SQLITE_FOR_TESTS", default=True)
 
-if use_sqlite or is_test_run:
+if use_sqlite or (is_test_run and use_sqlite_for_tests):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -25,7 +26,7 @@ if use_sqlite or is_test_run:
         }
     }
 
-if is_test_run:
+if is_test_run and use_sqlite_for_tests:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
