@@ -6,12 +6,22 @@ from django.core.management.base import BaseCommand
 
 from apps.usuarios.infrastructure.models import RoleModel
 
+DEMO_PASSWORD = "UcoDemo2026*"
+
 ROLES = [
     ("administrador", "Administrador", "Gestion del sistema y auditoria."),
     ("lider_sd", "Lider SD", "Ejecucion y supervision de asignacion academica."),
     ("auxiliar_sd", "Auxiliar SD", "Apoyo operativo en reservas y ajustes."),
     ("facultad", "Facultad", "Envio de datos academicos al sistema."),
     ("admisiones", "Admisiones", "Actualizacion de cupos reales por grupo."),
+]
+
+DEMO_USERS = [
+    ("admin.sds", "admin.sds@uco.edu.co", "administrador", "TI"),
+    ("lider.sd", "lider.sd@uco.edu.co", "lider_sd", "Servicios Docentes"),
+    ("auxiliar.sd", "auxiliar.sd@uco.edu.co", "auxiliar_sd", "Servicios Docentes"),
+    ("facultad.ing", "facultad.ing@uco.edu.co", "facultad", "Facultad Ingenieria"),
+    ("admisiones", "admisiones@uco.edu.co", "admisiones", "Admisiones"),
 ]
 
 FACULTADES = [
@@ -162,24 +172,7 @@ class Command(BaseCommand):
 
     def _crear_usuarios(self, roles: dict[str, RoleModel]) -> None:
         user_model = get_user_model()
-        ejemplos = [
-            ("admin.sds", "admin.sds@uco.edu.co", "administrador", "TI"),
-            ("lider.sd", "lider.sd@uco.edu.co", "lider_sd", "Servicios Docentes"),
-            (
-                "auxiliar.sd",
-                "auxiliar.sd@uco.edu.co",
-                "auxiliar_sd",
-                "Servicios Docentes",
-            ),
-            (
-                "facultad.ing",
-                "facultad.ing@uco.edu.co",
-                "facultad",
-                "Facultad Ingenieria",
-            ),
-            ("admisiones", "admisiones@uco.edu.co", "admisiones", "Admisiones"),
-        ]
-        for username, email, role_code, departamento in ejemplos:
+        for username, email, role_code, departamento in DEMO_USERS:
             user, _created = user_model.objects.update_or_create(
                 username=username,
                 defaults={
@@ -192,7 +185,7 @@ class Command(BaseCommand):
                     "is_active": True,
                 },
             )
-            user.set_password("UcoDemo2026*")
+            user.set_password(DEMO_PASSWORD)
             user.save(update_fields=["password"])
 
     def _crear_datos_academicos(self) -> None:

@@ -486,6 +486,14 @@ cp .env.example .env
 # Desarrollo (con hot-reload)
 docker compose -f docker-compose.dev.yml up
 
+# El stack de desarrollo ejecuta migraciones y carga automaticamente
+# los usuarios demo base para presentar el sistema:
+# admin.sds / UcoDemo2026*
+# lider.sd / UcoDemo2026*
+# auxiliar.sd / UcoDemo2026*
+# facultad.ing / UcoDemo2026*
+# admisiones / UcoDemo2026*
+
 # Producción
 docker compose up -d
 
