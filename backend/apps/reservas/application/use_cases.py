@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+from django.db import transaction
+
 from ..domain.entities import Reserva, ReservaEstado
 from ..domain.exceptions import ReservaConflictoError, ReservaNoEncontradaError
 from ..domain.interfaces import IReservaRepository
@@ -42,6 +44,12 @@ class ReservaService:
                 else self.reserva_repo.create(reserva)
             )
         return self._to_output(reserva)
+
+    def crear_reservas_en_lote(
+        self, reservas: list[CrearReservaInputDTO]
+    ) -> list[ReservaOutputDTO]:
+        with transaction.atomic():
+            return [self.crear_reserva(reserva) for reserva in reservas]
 
     def confirmar_reserva(
         self, input_dto: ConfirmarReservaInputDTO

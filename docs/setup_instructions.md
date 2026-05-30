@@ -153,7 +153,16 @@ export DJANGO_SETTINGS_MODULE=config.settings.dev      # Linux/macOS
 python manage.py migrate
 ```
 
-### 6. Ejecutar el servidor de desarrollo
+### 6. Cargar datos base de demostración
+
+```bash
+python manage.py seed_base_data
+```
+
+Este comando crea roles, usuarios demo, aulas, grupos, un docente, un curso y parámetros base.  
+La contraseña de los usuarios demo es `UcoDemo2026*`.
+
+### 7. Ejecutar el servidor de desarrollo
 
 ```bash
 python manage.py runserver
