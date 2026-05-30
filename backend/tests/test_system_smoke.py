@@ -1,6 +1,7 @@
 from datetime import time
 
 from django.contrib.auth import authenticate, get_user_model
+from django.core.cache import cache
 from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -27,8 +28,12 @@ class SistemaSmokeTests(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         call_command("seed_base_data")
+        cache.delete("academico:aulas_disponibles")
+        cache.delete("academico:aulas_disponibles_dto")
         cls.user_model = get_user_model()
         cls._ensure_smoke_data()
+        cache.delete("academico:aulas_disponibles")
+        cache.delete("academico:aulas_disponibles_dto")
         cls.admin = cls.user_model.objects.get(username="admin.sds")
         cls.access_token = str(RefreshToken.for_user(cls.admin).access_token)
 
