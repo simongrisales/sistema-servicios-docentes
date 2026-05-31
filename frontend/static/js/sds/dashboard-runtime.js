@@ -588,8 +588,10 @@
         .map(
           (reserva) =>
             `<tr>
-              <td>${esc(reserva.reserva_id)}</td>
-              <td>${esc(reserva.aula_id)}</td>
+              <td>${esc(reserva.aula_nombre || reserva.aula_id)}</td>
+              <td>${esc(reserva.solicitante_nombre || reserva.solicitante_id)}</td>
+              <td>${esc(fmtDate(reserva.inicio))}</td>
+              <td>${esc(fmtDate(reserva.fin))}</td>
               <td><span class="badge ${reserva.estado === 'confirmed' || reserva.estado === 'CONFIRMADA' ? 'badge-success' : 'badge-warning'}">${esc(reserva.estado)}</span></td>
               <td>
                 <div class="hero-actions">

@@ -111,6 +111,52 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     };
 
+    const handleNotificationDelete = (button) => {
+        const notificationId = button.getAttribute("data-notification-delete");
+        if (!notificationId || !window.sds?.apiClient?.del) {
+            return;
+        }
+
+        button.disabled = true;
+        window.sds.apiClient
+            .del(`/api/notificaciones/${notificationId}/`)
+            .then(() => {
+                const item = button.closest?.("[data-notification-item]");
+                if (item) {
+                    item.remove();
+                }
+
+                setNotificationCount(getNotificationCount() - 1);
+
+                if (!document.querySelector("[data-notification-item]")) {
+                    ensureNotificationEmptyState();
+                }
+            })
+            .catch(() => {
+                button.disabled = false;
+                window.sds?.toast?.show?.({
+                    type: "error",
+                    message: "No fue posible eliminar la notificacion.",
+                });
+            });
+    };
+
+    const bindNotificationDeleteButtons = () => {
+        document.querySelectorAll("[data-notification-delete]").forEach((button) => {
+            if (button.dataset.notificationDeleteBound === "true") {
+                return;
+            }
+            button.dataset.notificationDeleteBound = "true";
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                handleNotificationDelete(button);
+            });
+        });
+    };
+
+    window.sds = window.sds || {};
+    window.sds.bindNotificationDeleteButtons = bindNotificationDeleteButtons;
+
     const ensureNotificationEmptyState = () => {
         const menu = document.getElementById("navbar-notifications-menu");
         if (!menu || menu.querySelector("[data-notification-empty]")) {
@@ -237,40 +283,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const deleteButton = event.target.closest?.("[data-notification-delete]");
-        if (deleteButton) {
-            event.preventDefault();
-
-            const notificationId = deleteButton.getAttribute("data-notification-delete");
-            if (!notificationId || !window.sds?.apiClient?.del) {
-                return;
-            }
-
-            deleteButton.disabled = true;
-            window.sds.apiClient
-                .del(`/api/notificaciones/${notificationId}/`)
-                .then(() => {
-                    const item = deleteButton.closest?.("[data-notification-item]");
-                    if (item) {
-                        item.remove();
-                    }
-
-                    setNotificationCount(getNotificationCount() - 1);
-
-                    if (!document.querySelector("[data-notification-item]")) {
-                        ensureNotificationEmptyState();
-                    }
-                })
-                .catch(() => {
-                    deleteButton.disabled = false;
-                    window.sds?.toast?.show?.({
-                        type: "error",
-                        message: "No fue posible eliminar la notificacion.",
-                    });
-                });
-            return;
-        }
-
         const insideNavbar = event.target.closest?.("[data-navbar-menu], [data-navbar-menu-toggle]");
         if (!insideNavbar) {
             closeNavbarMenus();
@@ -295,6 +307,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     bindToastCloseButtons();
+    bindNotificationDeleteButtons();
 
     initCollapsibleCards();
 });

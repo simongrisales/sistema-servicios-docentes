@@ -40,21 +40,25 @@ class ReservasViewSet(viewsets.ViewSet):
         )
 
     def list(self, request):
-        from ..infrastructure.repositories import ReservaRepository
+        from ..infrastructure.models import ReservaModel
 
-        reservas = [
-            reserva
-            for reserva in ReservaRepository().list()
-            if reserva.estado in {ReservaEstado.PENDIENTE, ReservaEstado.CONFIRMADA}
-        ]
-        reservas.sort(key=lambda item: item.bloque_horario_inicio, reverse=True)
+        reservas = list(
+            ReservaModel.objects.select_related("aula", "solicitante")
+            .filter(estado__in=[ReservaEstado.PENDIENTE, ReservaEstado.CONFIRMADA])
+            .order_by("-inicio")
+        )
         payload = [
             {
                 "reserva_id": reserva.reserva_id,
-                "aula_id": reserva.aula_id,
-                "inicio": reserva.bloque_horario_inicio,
-                "fin": reserva.bloque_horario_fin,
-                "solicitante_id": reserva.solicitante_id,
+                "aula_id": str(reserva.aula_id),
+                "aula_nombre": reserva.aula.nombre,
+                "inicio": reserva.inicio,
+                "fin": reserva.fin,
+                "solicitante_id": str(reserva.solicitante_id),
+                "solicitante_nombre": getattr(
+                    reserva.solicitante, "get_full_name", lambda: ""
+                )()
+                or getattr(reserva.solicitante, "username", ""),
                 "estado": reserva.estado,
             }
             for reserva in reservas

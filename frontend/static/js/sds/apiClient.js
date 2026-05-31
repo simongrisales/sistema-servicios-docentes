@@ -92,6 +92,7 @@
       request({
         url,
         method: 'DELETE',
+        parseJson: false,
         ...opts,
       }),
   };

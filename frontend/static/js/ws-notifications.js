@@ -81,6 +81,7 @@
             `;
 
             list.prepend(item);
+            window.sds?.bindNotificationDeleteButtons?.();
         };
 
         try {
