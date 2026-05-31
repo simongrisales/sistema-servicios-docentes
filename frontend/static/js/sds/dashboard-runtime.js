@@ -660,9 +660,16 @@
         data.solicitante_id = currentUserId;
       }
       try {
-        await postJson('/api/reservas/', data);
+        const reserva = await postJson('/api/reservas/', data);
         showStatus('aux-reserva-status', 'Reserva creada correctamente.', 'success');
         toast('success', 'Reserva creada correctamente.');
+        state.reservas = [
+          reserva,
+          ...state.reservas.filter(
+            (item) => String(item.reserva_id) !== String(reserva.reserva_id)
+          ),
+        ];
+        renderAuxiliar();
         await refreshCurrentPanel();
       } catch (error) {
         showStatus('aux-reserva-status', error.details || error.message, 'error');

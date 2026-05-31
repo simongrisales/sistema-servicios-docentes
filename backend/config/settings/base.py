@@ -46,7 +46,7 @@ env = environ.Env(
     PROMETHEUS_PORT=(int, 9090),
     GRAFANA_PORT=(int, 3000),
     GRAFANA_ADMIN_USER=(str, "admin"),
-    GRAFANA_ADMIN_PASSWORD=(str, "admin"),
+    GRAFANA_ADMIN_PASSWORD=(str, "password-placeholder"),
 )
 
 

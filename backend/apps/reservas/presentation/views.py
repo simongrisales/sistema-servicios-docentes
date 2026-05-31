@@ -9,6 +9,8 @@ from ..application.dtos import (
     CrearReservaInputDTO,
 )
 from ..application.use_cases import ReservaService
+from ..domain.entities import ReservaEstado
+from ..domain.exceptions import ReservaConflictoError
 from .serializers import CrearReservaSerializer, ReservaOutputSerializer
 
 
@@ -23,9 +25,15 @@ class ReservasViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = CrearReservaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        reserva = self._service().crear_reserva(
-            CrearReservaInputDTO(**serializer.validated_data)
-        )
+        try:
+            reserva = self._service().crear_reserva(
+                CrearReservaInputDTO(**serializer.validated_data)
+            )
+        except ReservaConflictoError as error:
+            return Response(
+                {"detail": str(error) or "No fue posible crear la reserva."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(
             ReservaOutputSerializer(reserva).data,
             status=status.HTTP_201_CREATED,
@@ -34,8 +42,24 @@ class ReservasViewSet(viewsets.ViewSet):
     def list(self, request):
         from ..infrastructure.repositories import ReservaRepository
 
-        reservas = ReservaRepository().list()
-        return Response(ReservaOutputSerializer(reservas, many=True).data)
+        reservas = [
+            reserva
+            for reserva in ReservaRepository().list()
+            if reserva.estado in {ReservaEstado.PENDIENTE, ReservaEstado.CONFIRMADA}
+        ]
+        reservas.sort(key=lambda item: item.bloque_horario_inicio, reverse=True)
+        payload = [
+            {
+                "reserva_id": reserva.reserva_id,
+                "aula_id": reserva.aula_id,
+                "inicio": reserva.bloque_horario_inicio,
+                "fin": reserva.bloque_horario_fin,
+                "solicitante_id": reserva.solicitante_id,
+                "estado": reserva.estado,
+            }
+            for reserva in reservas
+        ]
+        return Response(ReservaOutputSerializer(payload, many=True).data)
 
     @action(detail=True, methods=["post"], url_path="confirmar")
     def confirmar(self, request, pk=None):

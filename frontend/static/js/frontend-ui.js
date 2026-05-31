@@ -98,6 +98,19 @@ document.addEventListener("DOMContentLoaded", function () {
         notificationBadge.textContent = String(Math.max(0, Number.parseInt(nextCount, 10) || 0));
     };
 
+    const bindToastCloseButtons = () => {
+        document.querySelectorAll("[data-toast-close]").forEach((button) => {
+            if (button.dataset.toastBound === "true") {
+                return;
+            }
+            button.dataset.toastBound = "true";
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                window.hideToast();
+            });
+        });
+    };
+
     const ensureNotificationEmptyState = () => {
         const menu = document.getElementById("navbar-notifications-menu");
         if (!menu || menu.querySelector("[data-notification-empty]")) {
@@ -281,12 +294,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    document.querySelectorAll("[data-toast-close]").forEach((button) => {
-        button.addEventListener("click", (event) => {
-            event.preventDefault();
-            window.hideToast();
-        });
-    });
+    bindToastCloseButtons();
 
     initCollapsibleCards();
 });
@@ -299,6 +307,17 @@ window.showToast = function (data) {
     if (!toast || !message || !dot) {
         return;
     }
+
+    document.querySelectorAll("[data-toast-close]").forEach((button) => {
+        if (button.dataset.toastBound === "true") {
+            return;
+        }
+        button.dataset.toastBound = "true";
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+            window.hideToast();
+        });
+    });
 
     dot.className = `toast-dot ${data?.type || "info"}`;
     message.textContent = data?.message || "";
